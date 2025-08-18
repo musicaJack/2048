@@ -48,7 +48,6 @@ public:
     // 分数管理
     void updateScore(int points);
     uint32_t getCurrentScore() const;
-    uint32_t getBestScore() const;
     
     // 游戏状态管理
     void setGameStatus(GameStatus status);
@@ -64,7 +63,6 @@ public:
 
 private:
     uint32_t current_score_;      // 当前分数
-    uint32_t best_score_;         // 最佳分数
     GameStatus game_status_;      // 游戏状态
     BoardArray board_;            // 游戏棋盘
     uint32_t last_move_time_;     // 最后移动时间

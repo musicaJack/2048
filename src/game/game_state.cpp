@@ -11,7 +11,6 @@ namespace game2048 {
 
 GameState::GameState() 
     : current_score_(0)
-    , best_score_(0)
     , game_status_(GameStatus::READY)
     , board_()
     , last_move_time_(0)
@@ -35,7 +34,29 @@ void GameState::resetBoard() {
     addRandomTile();
     addRandomTile();
     
+    // 计算初始分数
     current_score_ = 0;
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            int value = board_[i][j];
+            if (value > 0) {
+                // 基础分数：数字的平方值
+                current_score_ += value * value;
+                
+                // 位置奖励：角落位置获得额外奖励
+                if ((i == 0 && j == 0) || (i == 0 && j == 3) || 
+                    (i == 3 && j == 0) || (i == 3 && j == 3)) {
+                    current_score_ += value * 10; // 角落奖励
+                }
+                
+                // 大数字奖励：高数值获得额外奖励
+                if (value >= 128) {
+                    current_score_ += value * 5; // 大数字奖励
+                }
+            }
+        }
+    }
+    
     game_status_ = GameStatus::PLAYING;
     game_start_time_ = to_ms_since_boot(get_absolute_time());
     last_move_time_ = game_start_time_;
@@ -115,9 +136,6 @@ bool GameState::hasWon() const {
 
 void GameState::updateScore(int points) {
     current_score_ += points;
-    if (current_score_ > best_score_) {
-        best_score_ = current_score_;
-    }
 }
 
 void GameState::setGameStatus(GameStatus status) {
@@ -130,10 +148,6 @@ GameStatus GameState::getGameStatus() const {
 
 uint32_t GameState::getCurrentScore() const {
     return current_score_;
-}
-
-uint32_t GameState::getBestScore() const {
-    return best_score_;
 }
 
 uint32_t GameState::getGameTime() const {

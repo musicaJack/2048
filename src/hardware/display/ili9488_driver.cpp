@@ -6,6 +6,7 @@
 #include "hardware/display/ili9488_driver.hpp"
 #include "hardware/display/ili9488_colors.hpp"
 #include "hardware/display/ili9488_font.hpp"
+#include "hardware/system/pin_config.hpp"
 
 #include <cstdio>
 #include <cstring>
@@ -24,6 +25,7 @@ namespace Commands {
     constexpr uint8_t SWRESET = 0x01;
     constexpr uint8_t SLPOUT  = 0x11;
     constexpr uint8_t INVON   = 0x21;
+    constexpr uint8_t INVOFF  = 0x20;
     constexpr uint8_t DISPON  = 0x29;
     constexpr uint8_t CASET   = 0x2A;
     constexpr uint8_t PASET   = 0x2B;
@@ -99,7 +101,7 @@ struct ILI9488Driver::Impl {
         const uint8_t* ptr = data;
         
         while (remaining > 0) {
-            size_t chunk_size = std::min(remaining, size_t(4096));
+            size_t chunk_size = std::min(remaining, size_t(4096)); // 恢复较大块大小，提升吞吐
             spi_write_blocking(spi_inst_, ptr, chunk_size);
             ptr += chunk_size;
             remaining -= chunk_size;
@@ -189,20 +191,28 @@ struct ILI9488Driver::Impl {
         gpio_put(pin_dc_, 1);    // DC high (data mode)
         gpio_put(pin_rst_, 1);   // Reset high (inactive)
         
-        // Configure backlight with PWM
+        // Configure backlight: PWM or direct GPIO
         if (pin_bl_ != 255) {  // Valid pin
+            #if ILI9488_BACKLIGHT_USE_PWM
             printf("  [ILI9488] 配置背光PWM: 引脚=%d\n", pin_bl_);
             gpio_set_function(pin_bl_, GPIO_FUNC_PWM);
             uint slice_num = pwm_gpio_to_slice_num(pin_bl_);
             uint channel = pwm_gpio_to_channel(pin_bl_);
             
-            pwm_config config = pwm_get_default_config();
-            pwm_config_set_clkdiv(&config, 4.0f);
-            pwm_config_set_wrap(&config, 255);
-            pwm_init(slice_num, &config, true);
+                         pwm_config config = pwm_get_default_config();
+             // 使用ILI9488_Pico的PWM配置：分频器4.0，频率约31.25kHz
+             pwm_config_set_clkdiv(&config, 4.0f);
+             pwm_config_set_wrap(&config, 255);
+             pwm_init(slice_num, &config, true);
             
-            pwm_set_chan_level(slice_num, channel, 255);
+            pwm_set_chan_level(slice_num, channel, ILI9488_BACKLIGHT_BRIGHTNESS);
             printf("  [ILI9488] 背光PWM配置完成: slice=%d, channel=%d\n", slice_num, channel);
+            #else
+            printf("  [ILI9488] 背光直流模式: 引脚=%d 电平=高\n", pin_bl_);
+            gpio_init(pin_bl_);
+            gpio_set_dir(pin_bl_, GPIO_OUT);
+            gpio_put(pin_bl_, 1);
+            #endif
         }
         
         printf("  [ILI9488] 硬件初始化完成\n");
@@ -245,12 +255,12 @@ struct ILI9488Driver::Impl {
         writeCommand(Commands::PIXFMT);
         writeData(0x66);
         
-        // VCOM control
-        printf("  [ILI9488] 设置VCOM控制...\n");
-        writeCommand(0xC5);
-        writeData(0x00);
-        writeData(0x36);
-        writeData(0x80);
+                 // VCOM control - 调整VCOM电压以减少纹波
+         printf("  [ILI9488] 设置VCOM控制...\n");
+         writeCommand(0xC5);
+         writeData(0x00);
+         writeData(0x36);  // 恢复默认VCOM电压
+         writeData(0x80);
         
         // Power control
         printf("  [ILI9488] 设置电源控制...\n");
@@ -279,7 +289,7 @@ struct ILI9488Driver::Impl {
             writeData(data);
         }
         
-        // Invert display
+        // Invert display - 恢复INVON
         printf("  [ILI9488] 设置显示反转...\n");
         writeCommand(Commands::INVON);
         
@@ -439,24 +449,38 @@ void ILI9488Driver::fillArea(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1,
     }
 }
 
-// Fill rectangular area (RGB666 native - no conversion needed)
-void ILI9488Driver::fillAreaRGB666(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint32_t color666) {
-    if (x0 > x1 || y0 > y1) return;
-    
-    pImpl_->setWindow(x0, y0, x1, y1);
-    
-    // 直接使用RGB666格式，无需转换
-    uint8_t rgb666_bytes[3];
-    rgb666_bytes[0] = (color666 >> 16) & 0xFC;  // 红色分量，保留高6位
-    rgb666_bytes[1] = (color666 >> 8) & 0xFC;   // 绿色分量，保留高6位
-    rgb666_bytes[2] = color666 & 0xFC;          // 蓝色分量，保留高6位
-    
-    uint32_t pixel_count = (x1 - x0 + 1) * (y1 - y0 + 1);
-    
-    for (uint32_t i = 0; i < pixel_count; ++i) {
-        pImpl_->writeDataBuffer(rgb666_bytes, 3);
+    // Fill rectangular area (RGB666 native - no conversion needed)
+    void ILI9488Driver::fillAreaRGB666(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint32_t color666) {
+        if (x0 > x1 || y0 > y1) return;
+        
+        pImpl_->setWindow(x0, y0, x1, y1);
+        
+        // 直接使用RGB666格式，无需转换
+        uint8_t rgb666_bytes[3];
+        rgb666_bytes[0] = (color666 >> 16) & 0xFC;  // 红色分量，保留高6位
+        rgb666_bytes[1] = (color666 >> 8) & 0xFC;   // 绿色分量，保留高6位
+        rgb666_bytes[2] = color666 & 0xFC;          // 蓝色分量，保留高6位
+        
+        uint32_t pixel_count = (x1 - x0 + 1) * (y1 - y0 + 1);
+        
+        // 批量发送数据，减少SPI传输次数
+        constexpr size_t BATCH_SIZE = 256; // 每批256个像素
+        uint8_t batch_buffer[BATCH_SIZE * 3];
+        
+        for (uint32_t i = 0; i < pixel_count; i += BATCH_SIZE) {
+            size_t batch_count = std::min(BATCH_SIZE, static_cast<size_t>(pixel_count - i));
+            
+            // 准备批次数据
+            for (size_t j = 0; j < batch_count; ++j) {
+                batch_buffer[j * 3] = rgb666_bytes[0];
+                batch_buffer[j * 3 + 1] = rgb666_bytes[1];
+                batch_buffer[j * 3 + 2] = rgb666_bytes[2];
+            }
+            
+            // 发送批次数据
+            pImpl_->writeDataBuffer(batch_buffer, batch_count * 3);
+        }
     }
-}
 
 // Fill entire screen (RGB565)
 void ILI9488Driver::fillScreen(uint16_t color) {
@@ -507,10 +531,14 @@ void ILI9488Driver::setBacklight(bool enable) {
 // Set backlight brightness (0-255)
 void ILI9488Driver::setBacklightBrightness(uint8_t brightness) {
     if (pImpl_->pin_bl_ == 255) return;  // Invalid pin
-    
+    #if ILI9488_BACKLIGHT_USE_PWM
     uint slice_num = pwm_gpio_to_slice_num(pImpl_->pin_bl_);
     uint channel = pwm_gpio_to_channel(pImpl_->pin_bl_);
     pwm_set_chan_level(slice_num, channel, brightness);
+    #else
+    // 在直流模式下，非零即开，零即关
+    gpio_put(pImpl_->pin_bl_, brightness ? 1 : 0);
+    #endif
 }
 
 // Enable/disable partial display mode

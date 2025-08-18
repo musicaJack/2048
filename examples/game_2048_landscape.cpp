@@ -34,27 +34,28 @@ ILI9488Driver* g_display = nullptr;
 #define GAME_UPDATE_DELAY_MS 50
 #define JOYSTICK_DIRECTION_RATIO 0.7f
 
-// 横屏尺寸 (Landscape_90)
-#define LANDSCAPE_WIDTH 480
-#define LANDSCAPE_HEIGHT 320
+// 竖屏尺寸 (Portrait_0)
+#define PORTRAIT_WIDTH 320
+#define PORTRAIT_HEIGHT 480
 
-// 棋盘布局参数
-#define BOARD_SIZE_PIXELS 200
+// 棋盘布局参数 - 竖屏优化
+#define BOARD_SIZE_PIXELS 300  // 最大棋盘尺寸
 #define CELL_SIZE (BOARD_SIZE_PIXELS / 4)
-#define BOARD_START_X ((LANDSCAPE_WIDTH - BOARD_SIZE_PIXELS) / 2)
-#define BOARD_START_Y ((LANDSCAPE_HEIGHT - BOARD_SIZE_PIXELS) / 2)
+#define BOARD_START_X ((PORTRAIT_WIDTH - BOARD_SIZE_PIXELS) / 2)  // 水平居中
+#define BOARD_START_Y 80  // 留出顶部空间给状态栏
 
-// 颜色定义 (RGB666)
+// 颜色定义 (RGB666) - 纯黑色背景 + 白色线框
 #define COLOR_BACKGROUND 0x000000  // 纯黑色背景
-#define COLOR_BOARD_BG 0x16213E    // 棋盘背景
-#define COLOR_GRID 0x0F3460        // 网格线
-#define COLOR_TEXT 0xE94560        // 文字颜色
+#define COLOR_BOARD_BG 0x000000    // 棋盘背景（纯黑色）
+#define COLOR_GRID 0xFFFFFF        // 网格线（白色）
+#define COLOR_BORDER 0xFFFFFF      // 外框线（白色）
+#define COLOR_TEXT 0xFFFFFF        // 文字颜色（白色）
 #define COLOR_SCORE_BG 0x533483    // 分数背景
 
-// 数字颜色 (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048)
+// 数字颜色 - 鲜艳马卡龙色系 (2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048)
 const uint32_t TILE_COLORS[] = {
-    0xEEE4DA, 0xEDE0C8, 0xF2B179, 0xF59563, 0xF67C5F,
-    0xF65E3B, 0xEDCF72, 0xEDCC61, 0xEDC850, 0xEDC53F, 0xEDC22E
+    0xFFB3BA, 0xFFB3D9, 0xFFB3FF, 0xD9B3FF, 0xB3B3FF,  // 粉红→粉紫→粉蓝
+    0xB3D9FF, 0xB3FFFF, 0xB3FFD9, 0xB3FFB3, 0xD9FFB3, 0xFFFFB3  // 粉青→粉绿→粉黄
 };
 
 // 游戏状态
@@ -72,7 +73,6 @@ bool g_input_enabled = true;
 // 缓存变量 - 用于局部刷新
 BoardArray g_last_board = {{0}};  // 上次的棋盘状态
 uint32_t g_last_score = 0;        // 上次的分数
-uint32_t g_last_best_score = 0;   // 上次的最佳分数
 GameStatus g_last_game_status = GameStatus::READY;  // 上次的游戏状态
 bool g_first_draw = true;         // 是否是首次绘制
 
@@ -80,7 +80,6 @@ bool g_first_draw = true;         // 是否是首次绘制
 void resetCache() {
     memset(g_last_board, 0, sizeof(BoardArray));
     g_last_score = 0;
-    g_last_best_score = 0;
     g_last_game_status = GameStatus::READY;
     g_first_draw = true;
 }
@@ -94,8 +93,8 @@ void logPrint(const char* format, ...) {
     printf("\n");
 }
 
-// 绘制数字方块
-void drawTile(uint16_t x, uint16_t y, int value, uint32_t color) {
+// 绘制数字方块背景（只绘制背景，不绘制文字）
+void drawTileBackground(uint16_t x, uint16_t y, int value) {
     if (value == 0) {
         // 空白格子
         g_display->fillAreaRGB666(x, y, x + CELL_SIZE - 2, y + CELL_SIZE - 2, COLOR_BOARD_BG);
@@ -115,6 +114,24 @@ void drawTile(uint16_t x, uint16_t y, int value, uint32_t color) {
     
     // 绘制方块背景
     g_display->fillAreaRGB666(x, y, x + CELL_SIZE - 2, y + CELL_SIZE - 2, TILE_COLORS[colorIndex]);
+}
+
+// 绘制数字方块文字（只绘制文字，不绘制背景）
+void drawTileText(uint16_t x, uint16_t y, int value) {
+    if (value == 0) {
+        return; // 空白格子不需要绘制文字
+    }
+    
+    // 计算颜色索引
+    int colorIndex = 0;
+    int tempValue = value;
+    while (tempValue > 2) {
+        tempValue /= 2;
+        colorIndex++;
+    }
+    if (colorIndex >= sizeof(TILE_COLORS)/sizeof(TILE_COLORS[0])) {
+        colorIndex = sizeof(TILE_COLORS)/sizeof(TILE_COLORS[0]) - 1;
+    }
     
     // 绘制数字
     char numStr[8];
@@ -126,6 +143,12 @@ void drawTile(uint16_t x, uint16_t y, int value, uint32_t color) {
     uint16_t textY = y + (CELL_SIZE - 16) / 2; // 16是字体高度
     
     g_display->drawString(textX, textY, numStr, COLOR_TEXT, TILE_COLORS[colorIndex]);
+}
+
+// 绘制数字方块（完整版本，保持兼容性）
+void drawTile(uint16_t x, uint16_t y, int value, uint32_t color) {
+    drawTileBackground(x, y, value);
+    drawTileText(x, y, value);
 }
 
 // 绘制单个方块（局部刷新用）
@@ -144,12 +167,39 @@ void drawBoardOptimized(const game2048::GameState& game_state) {
                                   BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
                                   BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BOARD_BG);
         
-        // 绘制所有方块
+        // 绘制白色外框线
+        // 上边框
+        g_display->fillAreaRGB666(BOARD_START_X - 10, BOARD_START_Y - 10, 
+                                  BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
+                                  BOARD_START_Y - 8, COLOR_BORDER);
+        // 下边框
+        g_display->fillAreaRGB666(BOARD_START_X - 10, BOARD_START_Y + BOARD_SIZE_PIXELS + 8, 
+                                  BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
+                                  BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BORDER);
+        // 左边框
+        g_display->fillAreaRGB666(BOARD_START_X - 10, BOARD_START_Y - 10, 
+                                  BOARD_START_X - 8, 
+                                  BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BORDER);
+        // 右边框
+        g_display->fillAreaRGB666(BOARD_START_X + BOARD_SIZE_PIXELS + 8, BOARD_START_Y - 10, 
+                                  BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
+                                  BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BORDER);
+        
+        // 第一步：绘制所有方块背景
         for (int i = 0; i < BOARD_SIZE; ++i) {
             for (int j = 0; j < BOARD_SIZE; ++j) {
                 uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
                 uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
-                drawSingleTile(x, y, board[i][j]);
+                drawTileBackground(x, y, board[i][j]);
+            }
+        }
+        
+        // 第二步：绘制所有方块文字
+        for (int i = 0; i < BOARD_SIZE; ++i) {
+            for (int j = 0; j < BOARD_SIZE; ++j) {
+                uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
+                uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
+                drawTileText(x, y, board[i][j]);
             }
         }
         
@@ -160,12 +210,24 @@ void drawBoardOptimized(const game2048::GameState& game_state) {
     }
     
     // 局部刷新：只更新变化的方块
+    // 第一步：绘制变化的方块背景
     for (int i = 0; i < BOARD_SIZE; ++i) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
             if (g_last_board[i][j] != board[i][j]) {
                 uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
                 uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
-                drawSingleTile(x, y, board[i][j]);
+                drawTileBackground(x, y, board[i][j]);
+            }
+        }
+    }
+    
+    // 第二步：绘制变化的方块文字
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            if (g_last_board[i][j] != board[i][j]) {
+                uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
+                uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
+                drawTileText(x, y, board[i][j]);
             }
         }
     }
@@ -177,13 +239,11 @@ void drawBoardOptimized(const game2048::GameState& game_state) {
 // 绘制状态栏（局部刷新版本）
 void drawStatusBarOptimized(const game2048::GameState& game_state) {
     uint32_t current_score = game_state.getCurrentScore();
-    uint32_t current_best_score = game_state.getBestScore();
     GameStatus current_game_status = game_state.getGameStatus();
     
     // 检查是否需要更新状态栏
     bool need_update = g_first_draw || 
                       current_score != g_last_score ||
-                      current_best_score != g_last_best_score ||
                       current_game_status != g_last_game_status;
     
     if (!need_update) {
@@ -191,12 +251,11 @@ void drawStatusBarOptimized(const game2048::GameState& game_state) {
     }
     
     // 重绘状态栏背景
-    g_display->fillAreaRGB666(0, 0, LANDSCAPE_WIDTH - 1, 40, COLOR_SCORE_BG);
+    g_display->fillAreaRGB666(0, 0, PORTRAIT_WIDTH - 1, 40, COLOR_SCORE_BG);
     
-    // 分数信息
+    // 分数信息 - 只显示当前分数
     char scoreStr[64];
-    snprintf(scoreStr, sizeof(scoreStr), "Score: %lu | Best: %lu", 
-             current_score, current_best_score);
+    snprintf(scoreStr, sizeof(scoreStr), "Score: %lu", current_score);
     g_display->drawString(10, 12, scoreStr, COLOR_TEXT, COLOR_SCORE_BG);
     
     // 游戏状态
@@ -207,21 +266,20 @@ void drawStatusBarOptimized(const game2048::GameState& game_state) {
         default: break;
     }
     
-    uint16_t statusX = LANDSCAPE_WIDTH - strlen(statusStr) * 12 - 10;
+    uint16_t statusX = PORTRAIT_WIDTH - strlen(statusStr) * 12 - 10;
     g_display->drawString(statusX, 12, statusStr, COLOR_TEXT, COLOR_SCORE_BG);
     
     // 更新缓存
     g_last_score = current_score;
-    g_last_best_score = current_best_score;
     g_last_game_status = current_game_status;
 }
 
 // 绘制控制提示
 void drawControlHint() {
     // 底部控制提示背景
-    g_display->fillAreaRGB666(0, LANDSCAPE_HEIGHT - 30, LANDSCAPE_WIDTH - 1, LANDSCAPE_HEIGHT - 1, COLOR_SCORE_BG);
+    g_display->fillAreaRGB666(0, PORTRAIT_HEIGHT - 30, PORTRAIT_WIDTH - 1, PORTRAIT_HEIGHT - 1, COLOR_SCORE_BG);
     
-    g_display->drawString(10, LANDSCAPE_HEIGHT - 25, "Joystick: Move | Button: Reset", COLOR_TEXT, COLOR_SCORE_BG);
+    g_display->drawString(10, PORTRAIT_HEIGHT - 25, "Joystick: Move | Button: Reset", COLOR_TEXT, COLOR_SCORE_BG);
 }
 
 // 处理摇杆输入
@@ -326,9 +384,9 @@ int main() {
     sleep_ms(2000);
     
     logPrint("========================================");
-    logPrint("=== 2048游戏 - 横屏版本 ===");
+    logPrint("=== 2048游戏 - 竖屏版本 ===");
     logPrint("========================================");
-    logPrint("屏幕尺寸: %dx%d", LANDSCAPE_WIDTH, LANDSCAPE_HEIGHT);
+    logPrint("屏幕尺寸: %dx%d", PORTRAIT_WIDTH, PORTRAIT_HEIGHT);
     logPrint("棋盘尺寸: %dx%d", BOARD_SIZE_PIXELS, BOARD_SIZE_PIXELS);
     logPrint("========================================");
     
@@ -341,10 +399,14 @@ int main() {
         return -1;
     }
     
-    // 设置横屏模式
-    logPrint("设置横屏模式...");
-    g_display->setRotation(Rotation::Landscape_90);
+    // 设置竖屏模式（0度旋转）
+    logPrint("设置竖屏模式...");
+    g_display->setRotation(Rotation::Portrait_0);
     g_display->fillScreenRGB666(COLOR_BACKGROUND);
+    
+    // 设置背光亮度
+    g_display->setBacklightBrightness(ILI9488_BACKLIGHT_BRIGHTNESS);
+    logPrint("背光亮度设置为: %d (%.1f%%)", ILI9488_BACKLIGHT_BRIGHTNESS, (ILI9488_BACKLIGHT_BRIGHTNESS * 100.0f) / 255.0f);
     
     logPrint("显示屏初始化成功!");
     

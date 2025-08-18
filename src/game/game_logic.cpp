@@ -24,6 +24,9 @@ bool GameLogic::moveLeft(GameState& game_state) {
     if (moved) {
         game_state.addRandomTile();
         game_state.updateLastMoveTime();
+        // 更新分数
+        int new_score = calculateScore(board);
+        game_state.updateScore(new_score - game_state.getCurrentScore());
     }
     
     return moved;
@@ -40,6 +43,9 @@ bool GameLogic::moveRight(GameState& game_state) {
     if (moved) {
         game_state.addRandomTile();
         game_state.updateLastMoveTime();
+        // 更新分数
+        int new_score = calculateScore(board);
+        game_state.updateScore(new_score - game_state.getCurrentScore());
     }
     
     return moved;
@@ -56,6 +62,9 @@ bool GameLogic::moveUp(GameState& game_state) {
     if (moved) {
         game_state.addRandomTile();
         game_state.updateLastMoveTime();
+        // 更新分数
+        int new_score = calculateScore(board);
+        game_state.updateScore(new_score - game_state.getCurrentScore());
     }
     
     return moved;
@@ -72,6 +81,9 @@ bool GameLogic::moveDown(GameState& game_state) {
     if (moved) {
         game_state.addRandomTile();
         game_state.updateLastMoveTime();
+        // 更新分数
+        int new_score = calculateScore(board);
+        game_state.updateScore(new_score - game_state.getCurrentScore());
     }
     
     return moved;
@@ -275,11 +287,33 @@ bool GameLogic::canMove(const GameState& game_state) const {
 
 int GameLogic::calculateScore(const BoardArray& board) const {
     int score = 0;
+    
+    // 新的计分规则：
+    // 1. 基础分数：每个数字的平方值
+    // 2. 合并奖励：每次合并获得额外分数
+    // 3. 位置奖励：角落和大数字位置奖励
+    
     for (int i = 0; i < BOARD_SIZE; ++i) {
         for (int j = 0; j < BOARD_SIZE; ++j) {
-            score += board[i][j];
+            int value = board[i][j];
+            if (value > 0) {
+                // 基础分数：数字的平方值
+                score += value * value;
+                
+                // 位置奖励：角落位置获得额外奖励
+                if ((i == 0 && j == 0) || (i == 0 && j == 3) || 
+                    (i == 3 && j == 0) || (i == 3 && j == 3)) {
+                    score += value * 10; // 角落奖励
+                }
+                
+                // 大数字奖励：高数值获得额外奖励
+                if (value >= 128) {
+                    score += value * 5; // 大数字奖励
+                }
+            }
         }
     }
+    
     return score;
 }
 

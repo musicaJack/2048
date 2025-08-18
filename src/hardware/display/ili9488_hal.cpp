@@ -5,6 +5,7 @@
  */
 
 #include "hardware/display/ili9488_hal.hpp"
+#include "hardware/system/pin_config.hpp"
 #include <algorithm>
 #include <cstdio>
 #include "hardware/pwm.h"
@@ -123,12 +124,18 @@ bool ILI9488HAL::initializeGPIO() {
         gpio_put(config_.pin_rst, 1);  // RST high (not in reset)
     }
     
-    // Initialize backlight pin (PWM)
+    // Initialize backlight pin (PWM or direct)
     if (config_.pin_bl != 255) {
+        #if ILI9488_BACKLIGHT_USE_PWM
         gpio_set_function(config_.pin_bl, GPIO_FUNC_PWM);
         uint slice_num = pwm_gpio_to_slice_num(config_.pin_bl);
         pwm_set_enabled(slice_num, true);
-        setBacklightBrightness(255);  // Full brightness
+        setBacklightBrightness(ILI9488_BACKLIGHT_BRIGHTNESS);  // 使用配置的亮度
+        #else
+        gpio_init(config_.pin_bl);
+        gpio_set_dir(config_.pin_bl, GPIO_OUT);
+        gpio_put(config_.pin_bl, 1); // 常亮
+        #endif
     }
     
     printf("GPIO pins initialized\n");
@@ -209,10 +216,13 @@ void ILI9488HAL::writeDataBuffer(const uint8_t* data, size_t length) {
 // Set backlight brightness (0-255)
 void ILI9488HAL::setBacklightBrightness(uint8_t brightness) {
     if (config_.pin_bl == 255) return;
-    
+    #if ILI9488_BACKLIGHT_USE_PWM
     uint slice_num = pwm_gpio_to_slice_num(config_.pin_bl);
     uint channel = pwm_gpio_to_channel(config_.pin_bl);
     pwm_set_chan_level(slice_num, channel, brightness);
+    #else
+    gpio_put(config_.pin_bl, brightness ? 1 : 0);
+    #endif
 }
 
 // Enable/disable backlight

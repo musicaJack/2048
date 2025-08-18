@@ -20,7 +20,7 @@ typedef struct i2c_inst i2c_inst_t;
 
 // SPI 接口配置
 #define ILI9488_SPI_INST        spi0        // SPI接口实例，使用SPI0
-#define ILI9488_SPI_SPEED_HZ    50000000    // SPI速度（50MHz）
+#define ILI9488_SPI_SPEED_HZ    40000000    // SPI速度40MHz
 
 // SPI 信号引脚
 #define ILI9488_PIN_SCK         18          // SPI时钟引脚
@@ -33,6 +33,13 @@ typedef struct i2c_inst i2c_inst_t;
 #define ILI9488_PIN_DC          20          // 数据/命令选择引脚
 #define ILI9488_PIN_RST         15          // 复位引脚
 #define ILI9488_PIN_BL          16          // 背光控制引脚
+
+// 背光亮度配置 (0-255)
+#define ILI9488_BACKLIGHT_BRIGHTNESS 128    // 50%亮度 (255 * 0.5 = 128)
+
+// 背光控制方式
+// 1 = 使用PWM（可调亮度，可能引入纹波）；0 = 直流常亮/开关（无PWM纹波）
+#define ILI9488_BACKLIGHT_USE_PWM    1
 
 // =============================================================================
 // Joystick 手柄 I2C 配置
