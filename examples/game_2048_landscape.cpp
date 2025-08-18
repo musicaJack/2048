@@ -69,6 +69,22 @@ LocalGameState g_game_state = LocalGameState::INIT;
 uint32_t g_last_input_time = 0;
 bool g_input_enabled = true;
 
+// 缓存变量 - 用于局部刷新
+BoardArray g_last_board = {{0}};  // 上次的棋盘状态
+uint32_t g_last_score = 0;        // 上次的分数
+uint32_t g_last_best_score = 0;   // 上次的最佳分数
+GameStatus g_last_game_status = GameStatus::READY;  // 上次的游戏状态
+bool g_first_draw = true;         // 是否是首次绘制
+
+// 重置缓存状态
+void resetCache() {
+    memset(g_last_board, 0, sizeof(BoardArray));
+    g_last_score = 0;
+    g_last_best_score = 0;
+    g_last_game_status = GameStatus::READY;
+    g_first_draw = true;
+}
+
 // 控制台输出函数
 void logPrint(const char* format, ...) {
     va_list args;
@@ -112,41 +128,80 @@ void drawTile(uint16_t x, uint16_t y, int value, uint32_t color) {
     g_display->drawString(textX, textY, numStr, COLOR_TEXT, TILE_COLORS[colorIndex]);
 }
 
-// 绘制游戏棋盘
-void drawBoard(const game2048::GameState& game_state) {
-    const BoardArray& board = game_state.getBoard();
-    
-    // 绘制棋盘背景
-    g_display->fillAreaRGB666(BOARD_START_X - 10, BOARD_START_Y - 10, 
-                              BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
-                              BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BOARD_BG);
-    
-    // 绘制网格和数字
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-        for (int j = 0; j < BOARD_SIZE; ++j) {
-            uint16_t x = BOARD_START_X + j * CELL_SIZE;
-            uint16_t y = BOARD_START_Y + i * CELL_SIZE;
-            
-            // 绘制数字方块
-            drawTile(x + 1, y + 1, board[i][j], COLOR_TEXT);
-        }
-    }
+// 绘制单个方块（局部刷新用）
+void drawSingleTile(uint16_t x, uint16_t y, int value) {
+    drawTile(x, y, value, COLOR_TEXT);
 }
 
-// 绘制状态栏
-void drawStatusBar(const game2048::GameState& game_state) {
-    // 顶部状态栏背景
+// 绘制游戏棋盘（局部刷新版本）
+void drawBoardOptimized(const game2048::GameState& game_state) {
+    const BoardArray& board = game_state.getBoard();
+    
+    // 如果是首次绘制，绘制完整棋盘
+    if (g_first_draw) {
+        // 绘制棋盘背景
+        g_display->fillAreaRGB666(BOARD_START_X - 10, BOARD_START_Y - 10, 
+                                  BOARD_START_X + BOARD_SIZE_PIXELS + 10, 
+                                  BOARD_START_Y + BOARD_SIZE_PIXELS + 10, COLOR_BOARD_BG);
+        
+        // 绘制所有方块
+        for (int i = 0; i < BOARD_SIZE; ++i) {
+            for (int j = 0; j < BOARD_SIZE; ++j) {
+                uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
+                uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
+                drawSingleTile(x, y, board[i][j]);
+            }
+        }
+        
+        // 复制当前状态到缓存
+        memcpy(g_last_board, board, sizeof(BoardArray));
+        g_first_draw = false;
+        return;
+    }
+    
+    // 局部刷新：只更新变化的方块
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            if (g_last_board[i][j] != board[i][j]) {
+                uint16_t x = BOARD_START_X + j * CELL_SIZE + 1;
+                uint16_t y = BOARD_START_Y + i * CELL_SIZE + 1;
+                drawSingleTile(x, y, board[i][j]);
+            }
+        }
+    }
+    
+    // 更新缓存
+    memcpy(g_last_board, board, sizeof(BoardArray));
+}
+
+// 绘制状态栏（局部刷新版本）
+void drawStatusBarOptimized(const game2048::GameState& game_state) {
+    uint32_t current_score = game_state.getCurrentScore();
+    uint32_t current_best_score = game_state.getBestScore();
+    GameStatus current_game_status = game_state.getGameStatus();
+    
+    // 检查是否需要更新状态栏
+    bool need_update = g_first_draw || 
+                      current_score != g_last_score ||
+                      current_best_score != g_last_best_score ||
+                      current_game_status != g_last_game_status;
+    
+    if (!need_update) {
+        return;
+    }
+    
+    // 重绘状态栏背景
     g_display->fillAreaRGB666(0, 0, LANDSCAPE_WIDTH - 1, 40, COLOR_SCORE_BG);
     
     // 分数信息
     char scoreStr[64];
     snprintf(scoreStr, sizeof(scoreStr), "Score: %lu | Best: %lu", 
-             game_state.getCurrentScore(), game_state.getBestScore());
+             current_score, current_best_score);
     g_display->drawString(10, 12, scoreStr, COLOR_TEXT, COLOR_SCORE_BG);
     
     // 游戏状态
     const char* statusStr = "Playing";
-    switch (game_state.getGameStatus()) {
+    switch (current_game_status) {
         case GameStatus::WON: statusStr = "WON! 🎉"; break;
         case GameStatus::GAME_OVER: statusStr = "Game Over"; break;
         default: break;
@@ -154,6 +209,11 @@ void drawStatusBar(const game2048::GameState& game_state) {
     
     uint16_t statusX = LANDSCAPE_WIDTH - strlen(statusStr) * 12 - 10;
     g_display->drawString(statusX, 12, statusStr, COLOR_TEXT, COLOR_SCORE_BG);
+    
+    // 更新缓存
+    g_last_score = current_score;
+    g_last_best_score = current_best_score;
+    g_last_game_status = current_game_status;
 }
 
 // 绘制控制提示
@@ -208,8 +268,8 @@ void handleJoystickInput(GameLogic& logic, game2048::GameState& game_state) {
             g_last_input_time = current_time;
             
             // 重绘棋盘
-            drawBoard(game_state);
-            drawStatusBar(game_state);
+            drawBoardOptimized(game_state);
+            drawStatusBarOptimized(game_state);
         }
     }
     
@@ -220,10 +280,13 @@ void handleJoystickInput(GameLogic& logic, game2048::GameState& game_state) {
         g_game_state = LocalGameState::PLAYING;
         g_last_input_time = to_ms_since_boot(get_absolute_time());
         
+        // 重置缓存状态
+        resetCache();
+        
         // 重绘整个界面
         g_display->fillScreenRGB666(COLOR_BACKGROUND);
-        drawBoard(game_state);
-        drawStatusBar(game_state);
+        drawBoardOptimized(game_state);
+        drawStatusBarOptimized(game_state);
         drawControlHint();
         
         logPrint("Game reset complete!");
@@ -238,7 +301,7 @@ void checkGameStatus(GameLogic& logic, game2048::GameState& game_state) {
         game_state.setGameStatus(GameStatus::WON);
         g_game_state = LocalGameState::WON;
         logPrint("🎉 CONGRATULATIONS! You reached 2048! 🎉");
-        drawStatusBar(game_state);
+        drawStatusBarOptimized(game_state);
     }
     
     // 检查游戏是否结束
@@ -246,7 +309,7 @@ void checkGameStatus(GameLogic& logic, game2048::GameState& game_state) {
         game_state.setGameStatus(GameStatus::GAME_OVER);
         g_game_state = LocalGameState::GAME_OVER;
         logPrint("💀 GAME OVER! No more moves possible! 💀");
-        drawStatusBar(game_state);
+        drawStatusBarOptimized(game_state);
     }
 }
 
@@ -322,8 +385,8 @@ int main() {
     
     // 绘制初始界面
     logPrint("绘制游戏界面...");
-    drawBoard(game_state);
-    drawStatusBar(game_state);
+    drawBoardOptimized(game_state);
+    drawStatusBarOptimized(game_state);
     drawControlHint();
     
     logPrint("游戏已就绪! 使用摇杆控制游戏...");
