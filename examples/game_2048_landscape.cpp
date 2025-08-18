@@ -45,7 +45,7 @@ ILI9488Driver* g_display = nullptr;
 #define BOARD_START_Y ((LANDSCAPE_HEIGHT - BOARD_SIZE_PIXELS) / 2)
 
 // 颜色定义 (RGB666)
-#define COLOR_BACKGROUND 0x1A1A2E  // 深蓝灰背景
+#define COLOR_BACKGROUND 0x000000  // 纯黑色背景
 #define COLOR_BOARD_BG 0x16213E    // 棋盘背景
 #define COLOR_GRID 0x0F3460        // 网格线
 #define COLOR_TEXT 0xE94560        // 文字颜色

@@ -20,7 +20,7 @@ typedef struct i2c_inst i2c_inst_t;
 
 // SPI 接口配置
 #define ILI9488_SPI_INST        spi0        // SPI接口实例，使用SPI0
-#define ILI9488_SPI_SPEED_HZ    40000000    // SPI速度（40MHz）
+#define ILI9488_SPI_SPEED_HZ    50000000    // SPI速度（50MHz）
 
 // SPI 信号引脚
 #define ILI9488_PIN_SCK         18          // SPI时钟引脚

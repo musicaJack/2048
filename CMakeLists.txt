@@ -88,24 +88,20 @@ target_link_libraries(hardware_test
 #     hardware_drivers
 # )
 
-# 创建游戏演示程序
-add_executable(game2048_demo examples/game_2048_demo.cpp)
+# 创建游戏演示程序 (暂时注释掉，文件不存在)
+# add_executable(game2048_demo examples/game_2048_demo.cpp)
+# target_compile_options(game2048_demo PRIVATE -fexceptions)
+# pico_enable_stdio_usb(game2048_demo 1)
+# pico_enable_stdio_uart(game2048_demo 0)
 
-# 启用C++异常处理
-target_compile_options(game2048_demo PRIVATE -fexceptions)
-
-# 启用串口输出和调试功能
-pico_enable_stdio_usb(game2048_demo 1)
-pico_enable_stdio_uart(game2048_demo 0)
-
-target_link_libraries(game2048_demo 
-    game2048_core
-    hardware_drivers
-    pico_stdlib
-)
+# target_link_libraries(game2048_demo 
+#     game2048_core
+#     hardware_drivers
+#     pico_stdlib
+# )
 
 # Generate UF2 output
-pico_add_extra_outputs(game2048_demo)
+# pico_add_extra_outputs(game2048_demo)
 
 # 创建横屏2048游戏程序
 add_executable(game2048_landscape examples/game_2048_landscape.cpp)
