@@ -1,0 +1,221 @@
+{
+  "game": {
+    "version": "1.0.0",
+    "name": "2048",
+    "description": "经典2048数字益智游戏",
+    
+    "rules": {
+      "board_size": 4,
+      "initial_tiles": 2,
+      "new_tiles_per_move": 2,
+      "win_value": 2048,
+      "tile_values": [2, 4],
+      "merge_rule": "same_value_combine",
+      "game_over_condition": "no_moves_possible"
+    },
+    
+    "display": {
+      "orientation": "portrait",
+      "screen_resolution": {
+        "width": 320,
+        "height": 480
+      },
+      "game_area": {
+        "x": 40,
+        "y": 80,
+        "width": 240,
+        "height": 240
+      },
+      "layout": {
+        "title_bar": {
+          "height": 40,
+          "background": "0x0000FC",
+          "text_color": "0xFCFCFC"
+        },
+        "score_bar": {
+          "height": 30,
+          "background": "0x0000FC",
+          "text_color": "0xFCFCFC"
+        },
+        "game_area": {
+          "background": "0x000000",
+          "border_color": "0x0000FC",
+          "border_width": 2
+        },
+        "control_bar": {
+          "height": 30,
+          "background": "0x0000FC",
+          "text_color": "0xFCFCFC"
+        }
+      },
+      "tiles": {
+        "size": 60,
+        "margin": 2,
+        "corner_radius": 4,
+        "shadow": true,
+        "colors": {
+          "background": "0x000000",
+          "empty": "0xC0C0C0",
+          "2": "0xFCC0C0",
+          "4": "0xFC8000",
+          "8": "0xFCFC00",
+          "16": "0x80FC00",
+          "32": "0x00FC00",
+          "64": "0x00FCFC",
+          "128": "0x0000FC",
+          "256": "0xFC00FC",
+          "512": "0xFC0000",
+          "1024": "0x40FC40",
+          "2048": "0xFC00C0"
+        },
+        "text_colors": {
+          "2": "0x000000",
+          "4": "0x000000",
+          "8": "0x000000",
+          "16": "0x000000",
+          "32": "0xFCFCFC",
+          "64": "0xFCFCFC",
+          "128": "0xFCFCFC",
+          "256": "0xFCFCFC",
+          "512": "0xFCFCFC",
+          "1024": "0x000000",
+          "2048": "0xFCFCFC"
+        }
+      }
+    },
+    
+    "input": {
+      "joystick": {
+        "deadzone": 20,
+        "direction_ratio": 1.5,
+        "debounce_ms": 50,
+        "repeat_delay_ms": 200
+      },
+      "buttons": {
+        "middle": {
+          "function": "pause_restart",
+          "long_press_ms": 1000
+        }
+      },
+      "feedback": {
+        "led_colors": {
+          "idle": "0x00FF00",
+          "move": "0x0000FF",
+          "merge": "0xFFFF00",
+          "invalid": "0xFF0000",
+          "game_over": "0xFF00FF",
+          "win": "0x00FFFF"
+        }
+      }
+    },
+    
+    "animation": {
+      "enabled": true,
+      "fps": 60,
+      "durations": {
+        "move": 200,
+        "merge": 150,
+        "new_tile": 300,
+        "game_over": 1000,
+        "win": 2000
+      },
+      "effects": {
+        "move_slide": true,
+        "merge_scale": true,
+        "new_tile_fade": true,
+        "game_over_flash": true,
+        "win_celebration": true
+      }
+    },
+    
+    "scoring": {
+      "merge_points": "tile_value",
+      "bonus_points": {
+        "consecutive_merges": 10,
+        "large_tiles": {
+          "512": 100,
+          "1024": 500,
+          "2048": 2000
+        }
+      },
+      "high_score_persistence": true
+    },
+    
+    "difficulty": {
+      "levels": {
+        "easy": {
+          "new_tile_4_probability": 0.05,
+          "animation_speed": 1.5
+        },
+        "normal": {
+          "new_tile_4_probability": 0.1,
+          "animation_speed": 1.0
+        },
+        "hard": {
+          "new_tile_4_probability": 0.15,
+          "animation_speed": 0.8
+        }
+      },
+      "default_level": "normal"
+    },
+    
+    "ui": {
+      "text": {
+        "title": "2048 GAME",
+        "score_label": "Score:",
+        "best_label": "Best:",
+        "moves_label": "Moves:",
+        "pause_text": "PAUSED",
+        "resume_text": "Press MID to resume",
+        "game_over_text": "Game Over!",
+        "win_text": "You Win!",
+        "restart_text": "Press MID to restart",
+        "auto_restart_text": "Auto restart in 5 seconds"
+      },
+      "fonts": {
+        "title": {
+          "size": 16,
+          "style": "bold"
+        },
+        "score": {
+          "size": 12,
+          "style": "normal"
+        },
+        "tile": {
+          "size": 14,
+          "style": "bold"
+        },
+        "ui": {
+          "size": 10,
+          "style": "normal"
+        }
+      }
+    },
+    
+    "performance": {
+      "target_fps": 60,
+      "frame_time_ms": 16,
+      "update_interval_ms": 16,
+      "input_poll_rate_hz": 60,
+      "memory_optimization": true,
+      "dma_usage": true
+    },
+    
+    "debug": {
+      "enabled": false,
+      "log_level": "info",
+      "show_fps": false,
+      "show_coordinates": false,
+      "show_debug_info": false
+    },
+    
+    "features": {
+      "undo": false,
+      "hint": false,
+      "auto_save": true,
+      "statistics": true,
+      "achievements": false,
+      "sound_effects": false
+    }
+  }
+} 

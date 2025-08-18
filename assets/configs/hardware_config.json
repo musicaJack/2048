@@ -1,0 +1,313 @@
+{
+  "hardware": {
+    "version": "1.0.0",
+    "description": "2048游戏项目硬件配置文件",
+    "platform": "Raspberry Pi Pico (RP2040)",
+    
+    "display": {
+      "type": "ILI9488",
+      "description": "3.5寸320x480 TFT LCD显示屏",
+      "resolution": {
+        "width": 320,
+        "height": 480
+      },
+      "spi": {
+        "instance": "spi0",
+        "speed_hz": 40000000,
+        "pins": {
+          "sck": 18,
+          "mosi": 19,
+          "miso": 255,
+          "cs": 17,
+          "dc": 20,
+          "rst": 15,
+          "bl": 16
+        },
+        "color_mode": "RGB666",
+        "rotation": "Portrait_180"
+      },
+      "features": {
+        "dma_support": true,
+        "partial_refresh": true,
+        "backlight_control": true,
+        "rgb666_native": true
+      }
+    },
+    
+    "joystick": {
+      "type": "I2C_Joystick",
+      "description": "I2C接口摇杆控制器",
+      "i2c": {
+        "instance": "i2c1",
+        "address": "0x63",
+        "speed_hz": 100000,
+        "pins": {
+          "sda": 6,
+          "scl": 7
+        }
+      },
+      "features": {
+        "adc_resolution": "12bit",
+        "button_count": 1,
+        "rgb_led": true,
+        "calibration": true
+      },
+      "parameters": {
+        "threshold": 1800,
+        "deadzone": 1000,
+        "loop_delay_ms": 20,
+        "direction_ratio": 1.5
+      },
+      "led_colors": {
+        "off": "0x000000",
+        "red": "0xFF0000",
+        "green": "0x00FF00",
+        "blue": "0x0000FF",
+        "yellow": "0xFFFF00",
+        "cyan": "0x00FFFF",
+        "magenta": "0xFF00FF"
+      }
+    },
+    
+    "system": {
+      "clock": {
+        "cpu_frequency_hz": 125000000,
+        "sys_clk_khz": 125000
+      },
+      "gpio": {
+        "led_pin": 25,
+        "debug_tx": 0,
+        "debug_rx": 1
+      },
+      "memory": {
+        "flash_size_mb": 2,
+        "ram_size_kb": 264
+      }
+    },
+    
+    "spi_instances": {
+      "spi0": {
+        "description": "ILI9488显示屏专用",
+        "speed_hz": 40000000,
+        "pins": {
+          "sck": 18,
+          "mosi": 19,
+          "miso": 255,
+          "cs": 17
+        },
+        "features": {
+          "dma_support": true,
+          "high_speed": true
+        }
+      },
+      "spi1": {
+        "description": "预留MicroSD卡接口",
+        "speed_hz": 40000000,
+        "pins": {
+          "sck": 10,
+          "mosi": 12,
+          "miso": 11,
+          "cs": 13
+        },
+        "features": {
+          "dma_support": true,
+          "microsd_ready": false
+        }
+      }
+    },
+    
+    "i2c_instances": {
+      "i2c0": {
+        "description": "预留I2C接口",
+        "speed_hz": 100000,
+        "pins": {
+          "sda": 4,
+          "scl": 5
+        },
+        "features": {
+          "available": true,
+          "used": false
+        }
+      },
+      "i2c1": {
+        "description": "摇杆控制器专用",
+        "speed_hz": 100000,
+        "pins": {
+          "sda": 6,
+          "scl": 7
+        },
+        "features": {
+          "available": true,
+          "used": true,
+          "device": "joystick"
+        }
+      }
+    },
+    
+    "dma": {
+      "channels": {
+        "display": {
+          "channel": 0,
+          "description": "ILI9488显示数据传输",
+          "priority": "high"
+        },
+        "spi1": {
+          "channel": 1,
+          "description": "SPI1数据传输",
+          "priority": "medium"
+        },
+        "audio": {
+          "channel": 2,
+          "description": "音频数据传输",
+          "priority": "low"
+        }
+      },
+      "features": {
+        "total_channels": 12,
+        "max_transfer_size": 65536
+      }
+    },
+    
+    "pins": {
+      "reserved": {
+        "gpio0": "UART0_TX",
+        "gpio1": "UART0_RX",
+        "gpio2": "I2C1_SDA",
+        "gpio3": "I2C1_SCL",
+        "gpio4": "I2C0_SDA",
+        "gpio5": "I2C0_SCL",
+        "gpio6": "I2C1_SDA (Joystick)",
+        "gpio7": "I2C1_SCL (Joystick)",
+        "gpio10": "SPI1_SCK",
+        "gpio11": "SPI1_MISO",
+        "gpio12": "SPI1_MOSI",
+        "gpio13": "SPI1_CS",
+        "gpio15": "ILI9488_RST",
+        "gpio16": "ILI9488_BL",
+        "gpio17": "ILI9488_CS",
+        "gpio18": "ILI9488_SCK",
+        "gpio19": "ILI9488_MOSI",
+        "gpio20": "ILI9488_DC",
+        "gpio25": "Onboard LED"
+      },
+      "available": [
+        8, 9, 14, 21, 22, 23, 24, 26, 27, 28, 29
+      ]
+    },
+    
+    "power": {
+      "voltage": {
+        "vbus": "5V",
+        "vsys": "3.3V",
+        "vdd": "3.3V"
+      },
+      "current": {
+        "max_display_ma": 200,
+        "max_joystick_ma": 50,
+        "max_total_ma": 500
+      }
+    },
+    
+    "performance": {
+      "display": {
+        "fill_screen_ms": 35,
+        "single_pixel_us": 120,
+        "rectangle_fill_ms": 15,
+        "circle_draw_ms": 12,
+        "text_render_ms": 6,
+        "dma_transfer_ms": 25
+      },
+      "joystick": {
+        "read_delay_ms": 20,
+        "response_time_ms": 5
+      }
+    },
+    
+    "compatibility": {
+      "pico_sdk_version": "1.5.1",
+      "cmake_version": "3.13",
+      "cxx_standard": "17",
+      "compiler": "arm-none-eabi-gcc"
+    },
+    
+    "debug": {
+      "uart": {
+        "enabled": true,
+        "baudrate": 115200,
+        "pins": {
+          "tx": 0,
+          "rx": 1
+        }
+      },
+      "led": {
+        "enabled": true,
+        "pin": 25
+      }
+    }
+  },
+  
+  "game": {
+    "display": {
+      "orientation": "portrait",
+      "game_area": {
+        "x": 40,
+        "y": 80,
+        "width": 240,
+        "height": 240
+      },
+      "tile_size": 60,
+      "tile_margin": 2,
+      "colors": {
+        "background": "0x000000",
+        "border": "0x0000FC",
+        "text": "0xFCFCFC",
+        "tiles": [
+          "0xC0C0C0",
+          "0xFCC0C0",
+          "0xFC8000",
+          "0xFCFC00",
+          "0x80FC00",
+          "0x00FC00",
+          "0x00FCFC",
+          "0x0000FC",
+          "0xFC00FC",
+          "0xFC0000",
+          "0x40FC40",
+          "0xFC00C0"
+        ],
+        "tile_descriptions": [
+          "empty",
+          "2",
+          "4",
+          "8",
+          "16",
+          "32",
+          "64",
+          "128",
+          "256",
+          "512",
+          "1024",
+          "2048"
+        ]
+      }
+    },
+    
+    "input": {
+      "joystick": {
+        "deadzone": 20,
+        "direction_ratio": 1.5,
+        "debounce_ms": 50
+      },
+      "button": {
+        "middle": "pause/restart"
+      }
+    },
+    
+    "animation": {
+      "move_duration_ms": 200,
+      "merge_duration_ms": 150,
+      "new_tile_duration_ms": 300,
+      "fps": 60
+    }
+  }
+} 
