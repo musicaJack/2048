@@ -1,0 +1,24 @@
+{
+  "display": {
+    "driver": "ili9488",
+    "rotation": 0,
+    "brightness": 100
+  },
+  "hardware": {
+    "spi": {
+      "port": 0,
+      "frequency": 40000000
+    },
+    "pins": {
+      "dc": 8,
+      "rst": 12,
+      "cs": 9,
+      "sclk": 10,
+      "mosi": 11
+    }
+  },
+  "game": {
+    "ui_scale": 1.0,
+    "color_scheme": "default"
+  }
+}
