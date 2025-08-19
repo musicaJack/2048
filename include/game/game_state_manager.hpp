@@ -2,6 +2,7 @@
 
 #include "game/game_2048.hpp"
 #include "game/game_ui.hpp"
+#include "game/game_animation.hpp"
 #include <cstdint>
 
 namespace game2048 {
@@ -25,11 +26,19 @@ public:
     
     // 设置状态
     void setState(LocalGameState state) { current_state_ = state; }
+    
+    // 成就检测
+    void checkAchievements(const GameState& game_state);
+    void setAnimationManager(GameAnimationManager* anim_manager) { anim_manager_ = anim_manager; }
 
 private:
     Game2048* game_;
     GameUIRenderer* ui_renderer_;
+    GameAnimationManager* anim_manager_;
     LocalGameState current_state_;
+    
+    // 成就追踪
+    int last_max_value_;
     
     // 处理获胜状态
     void handleWonState(GameState& game_state);

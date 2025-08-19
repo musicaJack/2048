@@ -19,6 +19,7 @@
 #include "game/game_ui.hpp"
 #include "game/game_input.hpp"
 #include "game/game_state_manager.hpp"
+#include "game/game_animation.hpp"
 #include "config/display_config_compile_time.hpp"
 #include "hardware/gpio.h"
 
@@ -32,6 +33,7 @@ DisplayDriver* g_display = nullptr;
 GameUIRenderer* g_ui_renderer = nullptr;
 GameInputHandler* g_input_handler = nullptr;
 GameStateManager* g_state_manager = nullptr;
+GameAnimationManager* g_animation_manager = nullptr;
 
 // 控制台输出函数
 void logPrint(const char* format, ...) {
@@ -136,9 +138,20 @@ int main() {
     
     logPrint("游戏初始化成功!");
     
+    // 创建动画管理器
+    g_animation_manager = new GameAnimationManager(g_display);
+    
+    // 设置动画区域（状态栏下方，棋盘上方）
+    uint16_t anim_x = 10;
+    uint16_t anim_y = 40; // 状态栏下方
+    uint16_t anim_width = g_display->getWidth() - 20;
+    uint16_t anim_height = 20; // 动画区域高度
+    g_animation_manager->setAnimationArea(anim_x, anim_y, anim_width, anim_height);
+    
     // 创建状态管理器
     g_state_manager = new GameStateManager(g_game, g_ui_renderer);
     g_state_manager->setState(LocalGameState::PLAYING);
+    g_state_manager->setAnimationManager(g_animation_manager);
     
     // 绘制初始界面
     logPrint("绘制游戏界面...");
@@ -147,6 +160,9 @@ int main() {
     g_ui_renderer->drawStatusBarOptimized(game_state);
     g_ui_renderer->drawControlHint();
     g_display->display(); // 刷新显示
+    
+    // 开始游戏开始动画
+    g_animation_manager->startGameStartAnimation();
     
     logPrint("游戏已就绪! 使用摇杆控制游戏...");
     
@@ -169,6 +185,14 @@ int main() {
                 
                 // 检查游戏状态
                 g_state_manager->checkGameStatus(logic, game_state);
+                
+                // 更新动画
+                if (g_animation_manager) {
+                    g_animation_manager->update();
+                    if (g_animation_manager->isPlaying()) {
+                        g_display->display(); // 动画播放时刷新显示
+                    }
+                }
                 
                 // 板载LED闪烁指示程序运行
                 gpio_put(PICO_DEFAULT_LED_PIN, (current_time / 500) % 2);
