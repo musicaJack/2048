@@ -25,12 +25,20 @@ public:
     
     // 获取最后输入时间
     uint32_t getLastInputTime() const { return last_input_time_; }
+    
+    // 检查是否有重置请求
+    bool isResetRequested() { 
+        bool requested = button_reset_requested_; 
+        button_reset_requested_ = false; // 清除标志
+        return requested; 
+    }
 
 private:
     input::JoystickHandler* joystick_handler_;
     bool input_enabled_;
     uint32_t last_input_time_;
     bool last_button_state_;
+    bool button_reset_requested_; // 重置请求标志
     
     // 处理方向输入
     bool handleDirectionInput(GameLogic& logic, GameState& game_state, 

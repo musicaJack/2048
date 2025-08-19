@@ -6,7 +6,7 @@ namespace game2048 {
 
 GameInputHandler::GameInputHandler(input::JoystickHandler* joystick_handler)
     : joystick_handler_(joystick_handler), input_enabled_(true), 
-      last_input_time_(0), last_button_state_(false) {
+      last_input_time_(0), last_button_state_(false), button_reset_requested_(false) {
 }
 
 void GameInputHandler::handleInput(GameLogic& logic, GameState& game_state) {
@@ -35,7 +35,8 @@ void GameInputHandler::handleInput(GameLogic& logic, GameState& game_state) {
     
     // 处理按钮输入（重置游戏）
     if (button_pressed && !last_button_state_) {
-        printf("重置游戏...\n");
+        printf("检测到重置按钮按下\n");
+        button_reset_requested_ = true; // 设置重置请求标志
         last_input_time_ = current_time;
     }
     last_button_state_ = button_pressed;

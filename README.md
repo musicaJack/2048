@@ -1,54 +1,74 @@
-# 2048游戏项目 - 硬件测试程序
+# 2048 Game Project - Dual Display Support
 
-这是一个基于Raspberry Pi Pico的2048游戏项目，包含完整的硬件测试程序和2048游戏实现。
+A 2048 game project based on Raspberry Pi Pico with support for both ST7306 reflective LCD and ILI9488 color TFT displays.
 
-## 最新更新
+## Latest Updates
 
-### 2024-08-18 - 编译错误修复
-- **修复了名称冲突问题**: 解决了 `game_2048_landscape.cpp` 中 `GameState` 枚举与 `game2048::GameState` 类的名称冲突
-- **项目编译成功**: 所有示例程序现在可以正常编译
-- **新增横屏版本**: 添加了 `game_2048_landscape.cpp` 横屏游戏示例
+### 2024-12-19 - v2.0 Major Refactoring
+- **Dual Display Support**: Added support for both ST7306 (4-level grayscale) and ILI9488 (color) displays
+- **Unified Game Architecture**: Created modular game architecture with separate UI, input, state, and animation managers
+- **Advanced Animation System**: Implemented game start animations, achievement notifications, and star reward system for ILI9488
+- **Code Reorganization**: Separated configuration and functional implementation into appropriate include and src directories
+- **Build System Optimization**: Cleaned up CMakeLists.txt and removed test programs
+- **Compilation Scripts**: Added batch scripts for easy compilation of both display versions
 
-## 硬件要求
+## Hardware Requirements
 
+### Option 1: ST7306 Reflective LCD Setup
 - **Raspberry Pi Pico (RP2040)**
-- **ILI9488 3.5寸TFT LCD显示屏** (320×480分辨率)
-- **I2C摇杆控制器** (地址: 0x63)
+- **ST7306 Reflective LCD Display** (128×64 resolution, 4-level grayscale)
+- **I2C Joystick Controller** (Address: 0x63)
 
-## 硬件连接
+### Option 2: ILI9488 Color TFT Setup
+- **Raspberry Pi Pico (RP2040)**
+- **ILI9488 3.5" TFT LCD Display** (320×480 resolution, RGB565 color)
+- **I2C Joystick Controller** (Address: 0x63)
 
-### ILI9488显示屏连接
-```
-Pico GPIO18 -> 显示屏 SCK
-Pico GPIO19 -> 显示屏 MOSI
-Pico GPIO17 -> 显示屏 CS
-Pico GPIO20 -> 显示屏 DC
-Pico GPIO15 -> 显示屏 RST
-Pico GPIO16 -> 显示屏 BL (背光)
-Pico 3.3V  -> 显示屏 VCC
-Pico GND   -> 显示屏 GND
-```
+## Hardware Connections
 
-### I2C摇杆连接
+### ST7306 Display Connections
 ```
-Pico GPIO6  -> 摇杆 SDA
-Pico GPIO7  -> 摇杆 SCL
-Pico 3.3V   -> 摇杆 VCC
-Pico GND    -> 摇杆 GND
+Pico GPIO18 -> Display SCK
+Pico GPIO19 -> Display MOSI
+Pico GPIO17 -> Display CS
+Pico GPIO20 -> Display DC
+Pico GPIO15 -> Display RST
+Pico 3.3V  -> Display VCC
+Pico GND   -> Display GND
 ```
 
-## 构建和烧录
+### ILI9488 Display Connections
+```
+Pico GPIO18 -> Display SCK
+Pico GPIO19 -> Display MOSI
+Pico GPIO17 -> Display CS
+Pico GPIO20 -> Display DC
+Pico GPIO15 -> Display RST
+Pico GPIO16 -> Display BL (Backlight)
+Pico 3.3V  -> Display VCC
+Pico GND   -> Display GND
+```
 
-### 环境准备
+### I2C Joystick Connections (Both Setups)
+```
+Pico GPIO6  -> Joystick SDA
+Pico GPIO7  -> Joystick SCL
+Pico 3.3V   -> Joystick VCC
+Pico GND    -> Joystick GND
+```
 
-1. **安装Pico SDK**
+## Build and Flash
+
+### Environment Setup
+
+1. **Install Pico SDK**
    ```bash
    git clone https://github.com/raspberrypi/pico-sdk
    cd pico-sdk
    git submodule update --init
    ```
 
-2. **设置环境变量**
+2. **Set Environment Variables**
    ```bash
    # Windows
    set PICO_SDK_PATH=C:\path\to\pico-sdk
@@ -57,233 +77,188 @@ Pico GND    -> 摇杆 GND
    export PICO_SDK_PATH=/path/to/pico-sdk
    ```
 
-3. **安装构建工具**
+3. **Install Build Tools**
    - CMake 3.13+
-   - ARM GCC编译器
-   - Visual Studio Code (推荐)
+   - ARM GCC Compiler
+   - Visual Studio Code (recommended)
 
-### 构建项目
+### Build Project
 
-#### Windows用户
+#### Windows Users
 ```bash
-# 运行构建脚本
-build_pico.bat
+# Build ST7306 version
+build_st7306.bat
+
+# Build ILI9488 version
+build_ili9488.bat
+
+# Build both versions
+build_all.bat
+
+# Clean build directories
+clean.bat
 ```
 
-#### Linux/macOS用户
+#### Linux/macOS Users
 ```bash
-# 创建构建目录
+# Create build directory
 mkdir build
 cd build
 
-# 配置项目
-cmake .. -DCMAKE_BUILD_TYPE=Release
+# Configure for ST7306
+cmake .. -DUSE_ST7306_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
 
-# 构建硬件测试程序
-make hardware_test -j4
+# Configure for ILI9488
+cmake .. -DUSE_ILI9488_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
 
-# 构建游戏示例程序
-make game2048_demo -j4
-make game2048_landscape -j4
+# Build unified game
+make game2048_unified -j4
 ```
 
-### 烧录固件
+### Flash Firmware
 
-1. **按住BOOTSEL按钮并插入Pico**
-2. **将生成的固件文件拖拽到RPI-RP2驱动器**
-   - `hardware_test.uf2` - 硬件测试程序
-   - `game2048_demo.uf2` - 2048游戏演示程序
-   - `game2048_landscape.uf2` - 2048游戏横屏版本
+1. **Hold BOOTSEL button and insert Pico**
+2. **Drag the generated firmware file to RPI-RP2 drive**
+   - `game2048_unified.uf2` - Unified 2048 game program (supports both displays)
 
-## 程序说明
+## Program Description
 
-### 硬件测试程序
+### Unified 2048 Game Program
 
-硬件测试程序用于验证硬件连接和功能是否正常。
+The `game2048_unified` program is the main game application that automatically adapts to the selected display driver.
 
-#### 测试内容
+#### ST7306 Version Features
+- **4-level grayscale rendering**: Optimized for reflective LCD characteristics
+- **Game2048 optimized font**: Custom font designed for small display
+- **Minimal animations**: No animations to maintain stability
+- **Efficient rendering**: Partial refresh and optimized drawing routines
 
-硬件测试程序 (`hardware_test`) 包含以下测试阶段：
+#### ILI9488 Version Features
+- **Full color support**: RGB565 color palette with classic 2048 colors
+- **Dark theme UI**: Pure black background with blue-black status bar
+- **Advanced animations**: Game start flashing, achievement heartbeat effects
+- **Star achievement system**: Earn stars for tile merges (16→32, 32→64, etc.)
+- **Enhanced visual feedback**: Dynamic color schemes and visual rewards
 
-#### 1. 显示屏测试 (0-5秒)
-- **颜色填充测试**: 红、绿、蓝、黄、洋红、青色全屏填充
-- **文字渲染测试**: 显示显示屏规格信息
-- **图形绘制测试**: 矩形、圆形绘制
-- **测试图案**: 棋盘格和渐变图案
-- **性能测试**: 1000个随机矩形的绘制性能
+#### Common Features
+- **Complete 2048 game logic**: Full game implementation with score tracking
+- **Joystick control**: Directional movement and center button reset
+- **Adaptive layout**: Automatically adjusts to display resolution
+- **Modular architecture**: Separated UI, input, state, and animation systems
 
-#### 2. 摇杆测试 (5-15秒)
-- **实时数据显示**: X轴、Y轴数值和按钮状态
-- **方向判断**: 自动识别摇杆方向
-- **可视化显示**: 摇杆位置的可视化表示
-- **LED反馈**: 根据操作状态改变摇杆LED颜色
+## Game Controls
 
-#### 3. 集成测试 (15-25秒)
-- **实时交互**: 摇杆操作实时反映在显示屏上
-- **可视化摇杆**: 圆形摇杆界面，实时显示位置
-- **状态反馈**: 数值、方向、按钮状态的实时显示
+- **Joystick Directions**: Move tiles in corresponding direction
+- **Center Button**: Reset game (works in all game states)
+- **Automatic Detection**: Game automatically detects valid moves
 
-#### 4. 测试完成 (25秒后)
-- **完成画面**: 绿色背景显示测试完成信息
-- **LED指示**: 板载LED闪烁表示测试完成
+## Achievement System (ILI9488 Only)
 
-### 串口输出
+### Star Rewards
+- **2+2=4**: 1 star
+- **4+4=8**: 1 star
+- **8+8=16**: 2 stars
+- **16+16=32**: 3 stars
+- **32+32=64**: 4 stars
+- **64+64=128**: 5 stars
+- **128+128=256**: 6 stars
+- **256+256=512**: 7 stars
+- **512+512=1024**: 8 stars
+- **1024+1024=2048**: 10 stars
 
-通过串口监视器可以查看详细的测试信息：
+### Achievement Notifications
+- **Tile Value Achievements**: Heartbeat animation for reaching 32, 64, 128, 256, 512, 1024, 2048
+- **Visual Feedback**: Color-coded achievement notifications
+- **Star Display**: Total stars shown in status bar
 
-```
-=== 2048游戏硬件测试程序 ===
-硬件配置:
-- 显示屏: ILI9488 (320x480)
-- 摇杆: I2C Joystick (地址: 0x63)
-- 平台: Raspberry Pi Pico (RP2040)
-
-阶段1: 显示屏初始化测试
-正在初始化ILI9488显示屏...
-显示屏初始化成功!
-显示屏旋转设置为180度
-背光已开启
-清屏测试完成
-
-阶段2: 摇杆初始化测试
-正在初始化I2C摇杆...
-摇杆初始化成功!
-摇杆信息:
-- 固件版本: 1
-- 引导程序版本: 1
-- I2C地址: 0x63
-
-=== 硬件初始化完成 ===
-开始功能测试...
-
-开始显示屏功能测试...
-测试状态: Display Test: Color Fill
-测试状态: Display Test: Text Rendering
-测试状态: Display Test: Graphics
-测试状态: Display Test: Pattern
-测试状态: Display Test: Performance
-
-开始摇杆功能测试...
-Joystick - X: 0, Y: 0, Button: RELEASED
-Joystick - X: 15, Y: -8, Button: RELEASED
-Joystick - X: -23, Y: 12, Button: PRESSED
-
-开始集成功能测试...
-
-=== 硬件测试完成 ===
-所有硬件功能正常!
-可以开始2048游戏开发!
-```
-
-### 串口设置
-
-- **波特率**: 115200
-- **数据位**: 8
-- **停止位**: 1
-- **校验位**: 无
-
-### 2048游戏程序
-
-#### game2048_demo
-- **描述**: 2048游戏演示程序，竖屏模式
-- **屏幕方向**: 竖屏 (320×480)
-- **控制方式**: I2C摇杆
-- **功能**: 完整的2048游戏逻辑，包含分数记录和游戏状态管理
-
-#### game2048_landscape
-- **描述**: 2048游戏横屏版本
-- **屏幕方向**: 横屏 (480×320)
-- **控制方式**: I2C摇杆
-- **功能**: 优化的横屏界面布局，更好的游戏体验
-- **特色**: 深蓝色主题，现代化的UI设计
-
-## 故障排除
-
-### 显示屏问题
-
-1. **显示屏不亮**
-   - 检查电源连接 (3.3V, GND)
-   - 检查背光引脚连接 (GPIO16)
-   - 确认SPI引脚连接正确
-
-2. **显示屏显示异常**
-   - 检查SPI引脚连接
-   - 确认显示屏旋转设置
-   - 检查SPI时钟频率
-
-3. **显示屏无响应**
-   - 检查复位引脚连接 (GPIO15)
-   - 确认CS引脚连接 (GPIO17)
-   - 检查DC引脚连接 (GPIO20)
-
-### 摇杆问题
-
-1. **摇杆无响应**
-   - 检查I2C引脚连接 (GPIO6, GPIO7)
-   - 确认摇杆地址设置 (0x63)
-   - 检查电源连接
-
-2. **摇杆数据异常**
-   - 检查I2C时钟频率设置
-   - 确认摇杆固件版本
-   - 检查连接线质量
-
-3. **摇杆LED不亮**
-   - 检查摇杆LED连接
-   - 确认I2C通信正常
-   - 检查摇杆固件
-
-### 编译问题
-
-1. **CMake配置失败**
-   - 确认PICO_SDK_PATH环境变量设置
-   - 检查Pico SDK版本 (需要1.5.1+)
-   - 确认CMake版本 (需要3.13+)
-
-2. **编译错误**
-   - 检查C++编译器版本 (需要支持C++17)
-   - 确认所有依赖库已安装
-   - 检查代码语法错误
-
-## 项目结构
+## Project Structure
 
 ```
 2048/
-├── include/                 # 头文件
-│   ├── hardware/           # 硬件驱动
-│   │   ├── display/        # 显示屏驱动
-│   │   ├── input/          # 输入设备驱动
-│   │   └── system/         # 系统配置
-│   ├── game/              # 游戏核心
-│   ├── ui/                # 用户界面
-│   ├── input/             # 输入处理
-│   └── utils/             # 工具模块
-├── src/                   # 源代码
-├── examples/              # 示例程序
-│   ├── game_2048_demo.cpp     # 2048游戏演示
-│   ├── game_2048_landscape.cpp # 2048游戏横屏版本
-│   └── hardware_test.cpp      # 硬件测试程序
-├── tests/                 # 测试程序
-├── assets/                # 资源文件
-├── build/                 # 构建输出
-├── CMakeLists.txt         # 构建配置
-├── build_pico.bat         # Windows构建脚本
-└── README.md              # 项目说明
+├── include/                 # Header files
+│   ├── config/             # Configuration management
+│   ├── display/            # Display driver interfaces
+│   │   └── adapters/       # Display adapters
+│   ├── game/               # Game core modules
+│   ├── hardware/           # Hardware drivers
+│   │   ├── display/        # Display drivers
+│   │   │   ├── st7306/     # ST7306 driver
+│   │   │   └── ili9488/    # ILI9488 driver
+│   │   └── input/          # Input device drivers
+│   ├── input/              # Input processing
+│   ├── ui/                 # User interface
+│   └── utils/              # Utility modules
+├── src/                    # Source code
+│   ├── config/             # Configuration implementation
+│   ├── display/            # Display management
+│   ├── game/               # Game implementation
+│   ├── hardware/           # Hardware implementations
+│   ├── input/              # Input processing
+│   ├── ui/                 # UI implementation
+│   └── utils/              # Utility implementations
+├── examples/               # Example programs
+│   └── game_2048_unified.cpp # Main unified game program
+├── build/                  # Build output
+├── firmware/               # Generated firmware files
+├── CMakeLists.txt          # Build configuration
+├── build_st7306.bat        # ST7306 build script
+├── build_ili9488.bat       # ILI9488 build script
+├── build_all.bat           # Build both versions
+├── clean.bat               # Clean build directories
+└── README.md               # Project documentation
 ```
 
-## 下一步
+## Troubleshooting
 
-项目已完成基础功能开发，可以继续优化：
+### Display Issues
 
-1. **游戏功能增强**: 添加更多游戏模式（如时间挑战、目标分数等）
-2. **界面优化**: 改进动画效果和视觉设计
-3. **性能优化**: 优化显示刷新率和游戏响应速度
-4. **功能扩展**: 添加音效、震动反馈等
+1. **ST7306 Display Problems**
+   - Check SPI connections (GPIO18, 19, 17, 20, 15)
+   - Verify power connections (3.3V, GND)
+   - Ensure proper initialization sequence
 
-## 许可证
+2. **ILI9488 Display Problems**
+   - Check all SPI and control pins
+   - Verify backlight connection (GPIO16)
+   - Confirm display rotation settings
 
-MIT License - 详见LICENSE文件
+### Joystick Issues
 
-## 贡献
+1. **No Response**
+   - Check I2C connections (GPIO6, GPIO7)
+   - Verify joystick address (0x63)
+   - Check power connections
 
-欢迎提交Issue和Pull Request来改进项目！ 
+2. **Incorrect Input**
+   - Calibrate joystick deadzone
+   - Check I2C clock frequency
+   - Verify joystick firmware
+
+### Build Issues
+
+1. **CMake Configuration Fails**
+   - Verify PICO_SDK_PATH environment variable
+   - Check Pico SDK version (requires 1.5.1+)
+   - Confirm CMake version (requires 3.13+)
+
+2. **Compilation Errors**
+   - Check C++ compiler version (requires C++17 support)
+   - Verify all dependencies are installed
+   - Check for syntax errors in source code
+
+## Next Steps
+
+The project is feature-complete with the following potential enhancements:
+
+1. **Additional Game Modes**: Time challenges, target scores, endless mode
+2. **Enhanced Animations**: More sophisticated visual effects
+3. **Performance Optimization**: Further rendering optimizations
+4. **Feature Extensions**: Sound effects, haptic feedback, save/load functionality
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Contributing
+
+Welcome to submit Issues and Pull Requests to improve the project! 

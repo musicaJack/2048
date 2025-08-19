@@ -1,4 +1,5 @@
 #include "game/game_ui.hpp"
+#include "game/game_animation.hpp" // 包含完整的头文件以使用成员函数
 #include "display/adapters/st7306_adapter.hpp"
 #include "display/adapters/ili9488_adapter.hpp"
 #include "config/display_config_compile_time.hpp"
@@ -7,8 +8,9 @@
 
 namespace game2048 {
 
-GameUIRenderer::GameUIRenderer(DisplayDriver* display) 
-    : display_(display), first_draw_(true) {
+GameUIRenderer::GameUIRenderer(DisplayDriver* display)
+    : display_(display), color_scheme_(ColorSchemeManager::getCurrentColorScheme()),
+      layout_params_(), last_game_status_(), first_draw_(true), anim_manager_(nullptr) {
     resetCache();
 }
 
@@ -241,7 +243,13 @@ void GameUIRenderer::drawStatusBarOptimized(const GameState& game_state) {
     snprintf(scoreStr, sizeof(scoreStr), "Score: %lu", current_score);
     display_->drawString(10, 12, scoreStr, color_scheme_.text, 1);
     
-    // 游戏状态
+    // 在状态栏右侧显示星星数量（优先显示）
+    if (anim_manager_) {
+        uint32_t star_count = anim_manager_->getTotalStars();
+        drawStarsInStatusBar(star_count);
+    }
+    
+    // 游戏状态（在星星左侧显示）
     const char* statusStr = "Playing";
     switch (current_game_status) {
         case GameStatus::WON: statusStr = "WON! 🎉"; break;
@@ -249,7 +257,8 @@ void GameUIRenderer::drawStatusBarOptimized(const GameState& game_state) {
         default: break;
     }
     
-    uint16_t statusX = display_->getWidth() - strlen(statusStr) * 12 - 10;
+    // 计算状态文字位置，确保不与星星重叠
+    uint16_t statusX = display_->getWidth() - strlen(statusStr) * 12 - 90; // 在星星左侧留出空间
     display_->drawString(statusX, 12, statusStr, color_scheme_.text, 1);
     
     // 更新缓存
@@ -261,6 +270,51 @@ void GameUIRenderer::drawControlHint() {
     // 底部控制提示背景
     display_->fillRect(0, display_->getHeight() - 30, display_->getWidth(), 30, color_scheme_.score_bg);
     display_->drawString(10, display_->getHeight() - 25, "Joystick: Move | Button: Reset", color_scheme_.text, 1);
+}
+
+void GameUIRenderer::drawStarCount(uint16_t x, uint16_t y, uint32_t star_count) {
+    if (!display_) return;
+    
+    char count_str[16];
+    snprintf(count_str, sizeof(count_str), "%lu", star_count);
+    
+    // 绘制星星图标
+    drawStar(x, y, 8, Color(255, 215, 0)); // 金色星星
+    
+    // 绘制数量文字
+    display_->drawString(x + 12, y - 4, count_str, Color(255, 255, 255), 1);
+}
+
+void GameUIRenderer::drawStarsInStatusBar(uint32_t star_count) {
+    if (!display_) return;
+    
+    // 在状态栏最右侧显示星星
+    uint16_t star_x = display_->getWidth() - 50; // 最右侧位置
+    uint16_t star_y = 15; // 状态栏垂直居中
+    
+    drawStarCount(star_x, star_y, star_count);
+}
+
+void GameUIRenderer::drawStar(int16_t x, int16_t y, uint8_t size, const Color& color) {
+    if (!display_) return;
+    
+    // 简单的五角星绘制（使用5个点）
+    int16_t points[5][2] = {
+        {x, static_cast<int16_t>(y - size)},           // 顶部
+        {static_cast<int16_t>(x + size/2), static_cast<int16_t>(y - size/3)}, // 右上
+        {static_cast<int16_t>(x + size/3), static_cast<int16_t>(y + size/2)}, // 右下
+        {static_cast<int16_t>(x - size/3), static_cast<int16_t>(y + size/2)}, // 左下
+        {static_cast<int16_t>(x - size/2), static_cast<int16_t>(y - size/3)}  // 左上
+    };
+    
+    // 绘制五角星轮廓
+    for (int i = 0; i < 5; ++i) {
+        int next = (i + 2) % 5; // 跳过相邻点，形成五角星
+        display_->drawLine(points[i][0], points[i][1], points[next][0], points[next][1], color);
+    }
+    
+    // 填充星星中心
+    display_->fillRect(x - 1, y - 1, 3, 3, color);
 }
 
 } // namespace game2048

@@ -2,7 +2,6 @@ C:/Users/sh_mu/code/2048/build/CMakeFiles/hardware_drivers.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/config_manager.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/display_manager.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/game2048_core.dir
-C:/Users/sh_mu/code/2048/build/CMakeFiles/game2048_portrait.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/game2048_unified.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/edit_cache.dir
 C:/Users/sh_mu/code/2048/build/CMakeFiles/rebuild_cache.dir

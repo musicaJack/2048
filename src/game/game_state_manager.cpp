@@ -1,15 +1,19 @@
 #include "game/game_state_manager.hpp"
-#include "pico/stdlib.h"
-#include <cstdio>
+#include "game/game_config.hpp" // For BOARD_SIZE
+#include <algorithm> // For std::max
 
 namespace game2048 {
 
 GameStateManager::GameStateManager(Game2048* game, GameUIRenderer* ui_renderer)
-    : game_(game), ui_renderer_(ui_renderer), anim_manager_(nullptr), 
-      current_state_(LocalGameState::INIT), last_max_value_(0) {
+    : game_(game), ui_renderer_(ui_renderer), anim_manager_(nullptr),
+      current_state_(LocalGameState::INIT), last_max_value_(0),
+      board_initialized_(false) { // 初始化合并追踪
 }
 
 void GameStateManager::checkGameStatus(GameLogic& logic, GameState& game_state) {
+    // 检查合并和星星奖励
+    checkMerges(game_state);
+    
     // 检查成就
     checkAchievements(game_state);
     
@@ -25,19 +29,23 @@ void GameStateManager::checkGameStatus(GameLogic& logic, GameState& game_state) 
 }
 
 void GameStateManager::resetGame() {
-    if (game_) {
-        game_->reset();
-        current_state_ = LocalGameState::PLAYING;
-        last_max_value_ = 0; // 重置成就追踪
-        
-        // 重置UI缓存
-        if (ui_renderer_) {
-            ui_renderer_->resetCache();
-            ui_renderer_->setFirstDraw(true);
-        }
-        
-        printf("游戏重置完成!\n");
+    game_->reset();
+    current_state_ = LocalGameState::PLAYING;
+    last_max_value_ = 0;
+    board_initialized_ = false; // 重置合并追踪
+    
+    // 重置星星计数
+    if (anim_manager_) {
+        anim_manager_->resetStars();
     }
+    
+    // 重置UI缓存
+    if (ui_renderer_) {
+        ui_renderer_->resetCache();
+        ui_renderer_->setFirstDraw(true);
+    }
+    
+    printf("游戏重置完成!\n");
 }
 
 void GameStateManager::handleWonState(GameState& game_state) {
@@ -66,7 +74,7 @@ void GameStateManager::checkAchievements(const GameState& game_state) {
         }
     }
     
-    // 检查是否有新的成就
+    // 检查是否有新的成就（仅ILI9488显示成就动画）
     if (current_max > last_max_value_) {
         // 检查是否达到特定成就等级
         if (current_max >= 32 && last_max_value_ < 32) {
@@ -98,6 +106,71 @@ void GameStateManager::handleGameOverState(GameState& game_state) {
     if (ui_renderer_) {
         ui_renderer_->drawStatusBarOptimized(game_state);
     }
+}
+
+void GameStateManager::checkMerges(const GameState& game_state) {
+    const BoardArray& current_board = game_state.getBoard();
+    
+    // 第一次初始化
+    if (!board_initialized_) {
+        // 复制数组内容
+        for (int i = 0; i < BOARD_SIZE; ++i) {
+            for (int j = 0; j < BOARD_SIZE; ++j) {
+                last_board_state_[i][j] = current_board[i][j];
+            }
+        }
+        board_initialized_ = true;
+        return;
+    }
+    
+    // 检测合并事件
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            int current_value = current_board[i][j];
+            int last_value = last_board_state_[i][j];
+            
+            // 如果当前值大于上次值，说明发生了合并
+            if (current_value > last_value && current_value > 0) {
+                // 计算星星奖励
+                uint8_t star_reward = calculateStarReward(current_value);
+                
+                if (star_reward > 0 && anim_manager_) {
+                    printf("检测到合并: %d → %d, 获得 %d 颗星\n", last_value, current_value, star_reward);
+                    anim_manager_->startStarGainAnimation(star_reward);
+                }
+            }
+        }
+    }
+    
+    // 更新上次状态
+    for (int i = 0; i < BOARD_SIZE; ++i) {
+        for (int j = 0; j < BOARD_SIZE; ++j) {
+            last_board_state_[i][j] = current_board[i][j];
+        }
+    }
+}
+
+uint8_t GameStateManager::calculateStarReward(int merged_value) {
+    // 根据合并后的数值计算星星奖励
+    // 合并后的数值应该是2的幂次方
+    int power = 0;
+    int temp = merged_value;
+    
+    while (temp > 1 && temp % 2 == 0) {
+        temp /= 2;
+        power++;
+    }
+    
+    if (temp != 1) {
+        return 0; // 不是2的幂次方，不是有效合并
+    }
+    
+    // 根据幂次计算星星奖励
+    if (power >= 2 && power - 2 < static_cast<int>(STAR_REWARDS_COUNT)) {
+        return STAR_REWARDS[power - 2];
+    }
+    
+    return 0; // 超出范围
 }
 
 } // namespace game2048

@@ -163,24 +163,7 @@ target_link_libraries(game2048_core
 # Generate UF2 output
 # pico_add_extra_outputs(game2048_demo)
 
-# 创建竖屏2048游戏程序
-add_executable(game2048_portrait examples/game_2048_portrait.cpp)
 
-# 启用C++异常处理
-target_compile_options(game2048_portrait PRIVATE -fexceptions)
-
-# 启用串口输出和调试功能
-pico_enable_stdio_usb(game2048_portrait 1)
-pico_enable_stdio_uart(game2048_portrait 0)
-
-target_link_libraries(game2048_portrait 
-    game2048_core
-    hardware_drivers
-    pico_stdlib
-)
-
-# Generate UF2 output
-pico_add_extra_outputs(game2048_portrait)
 
 # add_executable(display_test examples/display_test.cpp)
 # target_link_libraries(display_test hardware_drivers)
@@ -234,8 +217,6 @@ message(STATUS "  - Output Directory: ${CMAKE_BINARY_DIR}")
 message(STATUS "")
 message(STATUS "Available Targets:")
 message(STATUS "  - game2048_unified: 统一2048游戏程序（推荐使用）")
-message(STATUS "  - game2048_portrait: 原版竖屏2048游戏程序（仅ILI9488）")
 message(STATUS "")
 message(STATUS "Build Commands:")
-message(STATUS "  - cmake --build . --target game2048_unified")
-message(STATUS "  - cmake --build . --target game2048_portrait") 
+message(STATUS "  - cmake --build . --target game2048_unified") 

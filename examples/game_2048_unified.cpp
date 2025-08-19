@@ -141,12 +141,22 @@ int main() {
     // 创建动画管理器
     g_animation_manager = new GameAnimationManager(g_display);
     
-    // 设置动画区域（状态栏下方，棋盘上方）
+    // 根据显示驱动设置显示类型
+#ifdef DISPLAY_DRIVER_ST7306
+    g_animation_manager->setDisplayType(DisplayType::ST7306);
+#else
+    g_animation_manager->setDisplayType(DisplayType::ILI9488);
+#endif
+    
+    // 设置动画区域（底部提示区域上方）
     uint16_t anim_x = 10;
-    uint16_t anim_y = 40; // 状态栏下方
+    uint16_t anim_y = g_display->getHeight() - 70; // 底部提示区域上方，向上提高10像素
     uint16_t anim_width = g_display->getWidth() - 20;
     uint16_t anim_height = 20; // 动画区域高度
     g_animation_manager->setAnimationArea(anim_x, anim_y, anim_width, anim_height);
+    
+    // 连接动画管理器到UI渲染器
+    g_ui_renderer->setAnimationManager(g_animation_manager);
     
     // 创建状态管理器
     g_state_manager = new GameStateManager(g_game, g_ui_renderer);
@@ -174,6 +184,18 @@ int main() {
             case LocalGameState::PLAYING:
                 // 处理摇杆输入
                 g_input_handler->handleInput(logic, game_state);
+                
+                // 检查是否有重置请求
+                if (g_input_handler->isResetRequested()) {
+                    g_state_manager->resetGame();
+                    
+                    // 重绘整个界面
+                    g_display->clear(color_scheme.background);
+                    g_ui_renderer->drawBoardOptimized(game_state);
+                    g_ui_renderer->drawStatusBarOptimized(game_state);
+                    g_ui_renderer->drawControlHint();
+                    g_display->display(); // 刷新显示
+                }
                 
                 // 检查是否有移动
                 if (g_input_handler->getLastInputTime() > 0) {

@@ -8,7 +8,8 @@ namespace game2048 {
 GameAnimationManager::GameAnimationManager(DisplayDriver* display)
     : display_(display), state_(AnimationState::IDLE), current_type_(AnimationType::GAME_START),
       anim_x_(0), anim_y_(0), anim_width_(0), anim_height_(0), start_time_(0), frame_count_(0),
-      current_achievement_level_(AchievementLevel::ACHIEVEMENT_32) {
+      current_achievement_level_(AchievementLevel::ACHIEVEMENT_32), display_type_(DisplayType::ILI9488),
+      total_stars_(0) { // 初始化星星计数
     
     // 设置默认心跳参数
     heartbeat_params_ = {
@@ -18,9 +19,22 @@ GameAnimationManager::GameAnimationManager(DisplayDriver* display)
         HEARTBEAT_FRAME_DELAY,
         Color(255, 0, 0)  // 红色
     };
+    
+    // 设置默认星星动画参数
+    star_params_ = {
+        STAR_ANIMATION_DURATION,
+        STAR_ANIMATION_FRAME_DELAY,
+        Color(255, 215, 0),  // 金色星星
+        1
+    };
 }
 
 void GameAnimationManager::startGameStartAnimation() {
+    // ST7306不显示任何动画
+    if (display_type_ == DisplayType::ST7306) {
+        return;
+    }
+    
     if (state_ == AnimationState::PLAYING) return;
     
     state_ = AnimationState::PLAYING;
@@ -43,7 +57,31 @@ void GameAnimationManager::startAchievementAnimation(AchievementLevel level) {
     printf("开始成就动画: %d\n", static_cast<int>(level));
 }
 
+void GameAnimationManager::startStarGainAnimation(uint8_t star_count) {
+    // ST7306不显示星星动画
+    if (display_type_ == DisplayType::ST7306) {
+        total_stars_ += star_count; // 仍然计数，但不显示动画
+        return;
+    }
+    
+    if (state_ == AnimationState::PLAYING) return;
+    
+    state_ = AnimationState::PLAYING;
+    current_type_ = AnimationType::STAR_GAIN;
+    star_params_.star_count = star_count;
+    total_stars_ += star_count; // 增加星星数量
+    start_time_ = to_ms_since_boot(get_absolute_time());
+    frame_count_ = 0;
+    
+    printf("开始星星获得动画: +%d颗星 (总计: %d颗)\n", star_count, total_stars_);
+}
+
 void GameAnimationManager::update() {
+    // ST7306不更新任何动画
+    if (display_type_ == DisplayType::ST7306) {
+        return;
+    }
+    
     if (state_ != AnimationState::PLAYING) return;
     
     switch (current_type_) {
@@ -52,6 +90,9 @@ void GameAnimationManager::update() {
             break;
         case AnimationType::ACHIEVEMENT:
             updateAchievementAnimation();
+            break;
+        case AnimationType::STAR_GAIN:
+            updateStarGainAnimation();
             break;
     }
 }
@@ -80,7 +121,7 @@ void GameAnimationManager::updateGameStartAnimation() {
         return;
     }
     
-    // 计算当前应该显示还是隐藏
+    // ILI9488使用闪烁效果
     uint32_t flash_cycle = elapsed_time / (GAME_START_FLASH_DURATION * 2);
     uint32_t cycle_position = elapsed_time % (GAME_START_FLASH_DURATION * 2);
     bool visible = cycle_position < GAME_START_FLASH_DURATION;
@@ -91,6 +132,12 @@ void GameAnimationManager::updateGameStartAnimation() {
 }
 
 void GameAnimationManager::updateAchievementAnimation() {
+    // ST7306不显示成就动画
+    if (display_type_ == DisplayType::ST7306) {
+        stop();
+        return;
+    }
+    
     uint32_t current_time = to_ms_since_boot(get_absolute_time());
     uint32_t elapsed_time = current_time - start_time_;
     
@@ -107,6 +154,22 @@ void GameAnimationManager::updateAchievementAnimation() {
     
     // 绘制成就文字
     drawAchievementText(current_achievement_level_, intensity);
+}
+
+void GameAnimationManager::updateStarGainAnimation() {
+    uint32_t current_time = to_ms_since_boot(get_absolute_time());
+    uint32_t elapsed_time = current_time - start_time_;
+    
+    if (elapsed_time >= star_params_.duration_ms) {
+        stop();
+        return;
+    }
+    
+    // 计算动画强度
+    uint8_t intensity = 255 - (elapsed_time * 255) / star_params_.duration_ms;
+    
+    // 绘制星星获得效果
+    drawStarGainEffect(star_params_.star_count, intensity);
 }
 
 void GameAnimationManager::drawGameStartText(bool visible) {
@@ -166,6 +229,75 @@ void GameAnimationManager::drawAchievementText(AchievementLevel level, uint8_t i
     uint16_t text_y = anim_y_ + (anim_height_ - 16) / 2;
     
     display_->drawString(text_x, text_y, text, adjusted_color, 2);
+}
+
+void GameAnimationManager::drawStar(int16_t x, int16_t y, uint8_t size, const Color& color) {
+    if (!display_) return;
+    
+    // 简单的五角星绘制（使用5个点）
+    int16_t points[5][2] = {
+        {x, static_cast<int16_t>(y - size)},           // 顶部
+        {static_cast<int16_t>(x + size/2), static_cast<int16_t>(y - size/3)}, // 右上
+        {static_cast<int16_t>(x + size/3), static_cast<int16_t>(y + size/2)}, // 右下
+        {static_cast<int16_t>(x - size/3), static_cast<int16_t>(y + size/2)}, // 左下
+        {static_cast<int16_t>(x - size/2), static_cast<int16_t>(y - size/3)}  // 左上
+    };
+    
+    // 绘制五角星轮廓
+    for (int i = 0; i < 5; ++i) {
+        int next = (i + 2) % 5; // 跳过相邻点，形成五角星
+        display_->drawLine(points[i][0], points[i][1], points[next][0], points[next][1], color);
+    }
+    
+    // 填充星星中心
+    display_->fillRect(x - 1, y - 1, 3, 3, color);
+}
+
+void GameAnimationManager::drawStarCount(int16_t x, int16_t y, uint32_t count) {
+    if (!display_) return;
+    
+    char count_str[16];
+    snprintf(count_str, sizeof(count_str), "%lu", count);
+    
+    // 绘制星星图标
+    drawStar(x, y, STAR_SIZE, star_params_.star_color);
+    
+    // 绘制数量文字
+    display_->drawString(x + STAR_SIZE + 5, y - 4, count_str, Color(255, 255, 255), 1);
+}
+
+void GameAnimationManager::drawStarGainEffect(uint8_t star_count, uint8_t intensity) {
+    if (!display_) return;
+    
+    // 计算星星颜色（根据强度调整）
+    Color star_color = Color(
+        (star_params_.star_color.r * intensity) / 255,
+        (star_params_.star_color.g * intensity) / 255,
+        (star_params_.star_color.b * intensity) / 255
+    );
+    
+    // 在动画区域中心绘制获得的星星
+    uint16_t center_x = anim_x_ + anim_width_ / 2;
+    uint16_t center_y = anim_y_ + anim_height_ / 2;
+    
+    // 绘制多个星星（根据获得数量）
+    for (uint8_t i = 0; i < star_count && i < 5; ++i) { // 最多显示5颗星星
+        int16_t star_x = center_x - (star_count * STAR_SIZE) / 2 + i * STAR_SIZE;
+        int16_t star_y = center_y;
+        
+        // 添加一些随机偏移
+        star_x += (i % 2) * 4 - 2;
+        star_y += (i % 3) * 3 - 3;
+        
+        drawStar(star_x, star_y, STAR_SIZE, star_color);
+    }
+    
+    // 绘制获得文字
+    char gain_text[32];
+    snprintf(gain_text, sizeof(gain_text), "+%d", star_count);
+    uint16_t text_x = center_x - strlen(gain_text) * 6;
+    uint16_t text_y = center_y + STAR_SIZE + 5;
+    display_->drawString(text_x, text_y, gain_text, star_color, 1);
 }
 
 uint8_t GameAnimationManager::calculateHeartbeatIntensity(uint32_t elapsed_time) {
