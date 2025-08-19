@@ -101,4 +101,4 @@ if exist "firmware\game2048_unified_ili9488.uf2" (
 echo.
 echo 请将对应的固件文件复制到 Pico 的 BOOTSEL 模式中
 echo ========================================
-pause
+
