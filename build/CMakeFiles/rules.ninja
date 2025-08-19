@@ -7,14 +7,14 @@
 
 # =============================================================================
 # Project: Game2048
-# Configurations: Release
+# Configurations: Debug
 # =============================================================================
 # =============================================================================
 
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__hardware_drivers_Release
+rule ASM_COMPILER__hardware_drivers_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -o $out   -c $in
@@ -24,7 +24,7 @@ rule ASM_COMPILER__hardware_drivers_Release
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__hardware_drivers_Release
+rule C_COMPILER__hardware_drivers_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -34,7 +34,7 @@ rule C_COMPILER__hardware_drivers_Release
 #############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__hardware_drivers_Release
+rule CXX_COMPILER__hardware_drivers_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -44,7 +44,7 @@ rule CXX_COMPILER__hardware_drivers_Release
 #############################################
 # Rule for linking CXX static library.
 
-rule CXX_STATIC_LIBRARY_LINKER__hardware_drivers_Release
+rule CXX_STATIC_LIBRARY_LINKER__hardware_drivers_Debug
   command = cmd.exe /C "$PRE_LINK && "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1\cmake\bin\cmake.exe" -E rm -f $TARGET_FILE && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\ARM-NO~2.EXE qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR17F9~1.EXE $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   rspfile = $RSP_FILE
@@ -55,7 +55,7 @@ rule CXX_STATIC_LIBRARY_LINKER__hardware_drivers_Release
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__game2048_core_Release
+rule ASM_COMPILER__game2048_core_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -o $out   -c $in
@@ -65,7 +65,7 @@ rule ASM_COMPILER__game2048_core_Release
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__game2048_core_Release
+rule C_COMPILER__game2048_core_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -75,7 +75,7 @@ rule C_COMPILER__game2048_core_Release
 #############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__game2048_core_Release
+rule CXX_COMPILER__game2048_core_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -85,7 +85,7 @@ rule CXX_COMPILER__game2048_core_Release
 #############################################
 # Rule for linking CXX static library.
 
-rule CXX_STATIC_LIBRARY_LINKER__game2048_core_Release
+rule CXX_STATIC_LIBRARY_LINKER__game2048_core_Debug
   command = cmd.exe /C "$PRE_LINK && "C:\Program Files\Raspberry Pi\Pico SDK v1.5.1\cmake\bin\cmake.exe" -E rm -f $TARGET_FILE && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\ARM-NO~2.EXE qc $TARGET_FILE $LINK_FLAGS @$RSP_FILE && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR17F9~1.EXE $TARGET_FILE && $POST_BUILD"
   description = Linking CXX static library $TARGET_FILE
   rspfile = $RSP_FILE
@@ -96,7 +96,7 @@ rule CXX_STATIC_LIBRARY_LINKER__game2048_core_Release
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__hardware_test_Release
+rule ASM_COMPILER__hardware_test_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -o $out   -c $in
@@ -106,7 +106,7 @@ rule ASM_COMPILER__hardware_test_Release
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__hardware_test_Release
+rule C_COMPILER__hardware_test_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -116,7 +116,7 @@ rule C_COMPILER__hardware_test_Release
 #############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__hardware_test_Release
+rule CXX_COMPILER__hardware_test_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -126,7 +126,7 @@ rule CXX_COMPILER__hardware_test_Release
 #############################################
 # Rule for linking CXX executable.
 
-rule CXX_EXECUTABLE_LINKER__hardware_test_Release
+rule CXX_EXECUTABLE_LINKER__hardware_test_Debug
   command = cmd.exe /C "$PRE_LINK && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $FLAGS -Wl,--build-id=none $LINK_FLAGS @$RSP_FILE -o $TARGET_FILE  && $POST_BUILD"
   description = Linking CXX executable $TARGET_FILE
   rspfile = $RSP_FILE
@@ -137,7 +137,7 @@ rule CXX_EXECUTABLE_LINKER__hardware_test_Release
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__game2048_landscape_Release
+rule ASM_COMPILER__game2048_landscape_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -o $out   -c $in
@@ -147,7 +147,7 @@ rule ASM_COMPILER__game2048_landscape_Release
 #############################################
 # Rule for compiling C files.
 
-rule C_COMPILER__game2048_landscape_Release
+rule C_COMPILER__game2048_landscape_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -157,7 +157,7 @@ rule C_COMPILER__game2048_landscape_Release
 #############################################
 # Rule for compiling CXX files.
 
-rule CXX_COMPILER__game2048_landscape_Release
+rule CXX_COMPILER__game2048_landscape_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out -c $in
@@ -167,7 +167,7 @@ rule CXX_COMPILER__game2048_landscape_Release
 #############################################
 # Rule for linking CXX executable.
 
-rule CXX_EXECUTABLE_LINKER__game2048_landscape_Release
+rule CXX_EXECUTABLE_LINKER__game2048_landscape_Debug
   command = cmd.exe /C "$PRE_LINK && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR10B2~1.EXE $FLAGS -Wl,--build-id=none $LINK_FLAGS @$RSP_FILE -o $TARGET_FILE  && $POST_BUILD"
   description = Linking CXX executable $TARGET_FILE
   rspfile = $RSP_FILE
@@ -186,7 +186,7 @@ rule CUSTOM_COMMAND
 #############################################
 # Rule for compiling ASM files.
 
-rule ASM_COMPILER__bs2_default_Release
+rule ASM_COMPILER__bs2_default_Debug
   depfile = $DEP_FILE
   deps = gcc
   command = C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $DEFINES $INCLUDES $FLAGS -MD -MT $out -MF $DEP_FILE -o $out   -c $in
@@ -196,7 +196,7 @@ rule ASM_COMPILER__bs2_default_Release
 #############################################
 # Rule for linking ASM executable.
 
-rule ASM_EXECUTABLE_LINKER__bs2_default_Release
+rule ASM_EXECUTABLE_LINKER__bs2_default_Debug
   command = cmd.exe /C "$PRE_LINK && C:\PROGRA~1\RASPBE~1\PICOSD~1.1\GCC-AR~1\bin\AR19DD~1.EXE $FLAGS -Wl,--build-id=none $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD"
   description = Linking ASM executable $TARGET_FILE
   restat = $RESTAT
