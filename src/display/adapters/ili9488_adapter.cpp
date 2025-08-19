@@ -1,4 +1,5 @@
 #include "display/adapters/ili9488_adapter.hpp"
+#include "hardware/display/st7306/st73xx_font.hpp"
 #include <cstring>
 #include <cmath>
 
@@ -281,6 +282,69 @@ void ILI9488Adapter::transformCoordinates(int16_t& x, int16_t& y) const {
             break;
         default: // 0度，不需要转换
             break;
+    }
+}
+
+// Game2048优化字体绘制方法
+void ILI9488Adapter::drawStringGame2048(int16_t x, int16_t y, const std::string& text, const Color& color, uint8_t size) {
+    if (!driver_) return;
+    
+    uint16_t rgb565 = rgb888ToRgb565(color);
+    int16_t currentX = x;
+    
+    for (char c : text) {
+        const uint8_t* fontData = font::get_game2048_char_data(c);
+        if (!fontData) continue;
+        
+        for (int row = 0; row < font::GAME2048_FONT_HEIGHT; ++row) {
+            uint8_t rowData = fontData[row];
+            for (int col = 0; col < font::GAME2048_FONT_WIDTH; ++col) {
+                if (rowData & (0x80 >> col)) {
+                    for (int sx = 0; sx < size; ++sx) {
+                        for (int sy = 0; sy < size; ++sy) {
+                            int16_t px = currentX + col * size + sx;
+                            int16_t py = y + row * size + sy;
+                            transformCoordinates(px, py);
+                            if (px >= 0 && px < getWidth() && py >= 0 && py < getHeight()) {
+                                driver_->drawPixel(px, py, rgb565);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        currentX += font::GAME2048_FONT_WIDTH * size;
+    }
+}
+
+void ILI9488Adapter::drawStringGame2048(int16_t x, int16_t y, const std::string& text, const Color& color, const Color& bgColor, uint8_t size) {
+    if (!driver_) return;
+    
+    uint16_t textRgb565 = rgb888ToRgb565(color);
+    uint16_t bgRgb565 = rgb888ToRgb565(bgColor);
+    int16_t currentX = x;
+    
+    for (char c : text) {
+        const uint8_t* fontData = font::get_game2048_char_data(c);
+        if (!fontData) continue;
+        
+        for (int row = 0; row < font::GAME2048_FONT_HEIGHT; ++row) {
+            uint8_t rowData = fontData[row];
+            for (int col = 0; col < font::GAME2048_FONT_WIDTH; ++col) {
+                uint16_t pixelColor = (rowData & (0x80 >> col)) ? textRgb565 : bgRgb565;
+                for (int sx = 0; sx < size; ++sx) {
+                    for (int sy = 0; sy < size; ++sy) {
+                        int16_t px = currentX + col * size + sx;
+                        int16_t py = y + row * size + sy;
+                        transformCoordinates(px, py);
+                        if (px >= 0 && px < getWidth() && py >= 0 && py < getHeight()) {
+                            driver_->drawPixel(px, py, pixelColor);
+                        }
+                    }
+                }
+            }
+        }
+        currentX += font::GAME2048_FONT_WIDTH * size;
     }
 }
 

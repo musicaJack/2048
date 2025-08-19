@@ -37,31 +37,58 @@ uint16_t CELL_SIZE = 75;           // 格子尺寸
 uint16_t BOARD_START_X = 10;       // 棋盘起始X
 uint16_t BOARD_START_Y = 50;       // 棋盘起始Y
 
-// 颜色定义 - ST7306 4级灰度配色方案
-#define COLOR_BACKGROUND Color(255, 255, 255)  // 白色背景（灰度0 - 最亮）
-#define COLOR_BOARD_BG Color(170, 170, 170)    // 棋盘背景（灰度1）
-#define COLOR_GRID Color(85, 85, 85)           // 网格线（灰度2）
-#define COLOR_BORDER Color(0, 0, 0)            // 外框线（灰度3 - 最暗）
-#define COLOR_TEXT Color(255, 255, 255)        // 文字颜色（白色）
-#define COLOR_SCORE_BG Color(0, 0, 0)          // 状态栏背景（黑色）
-#define COLOR_TILE_BORDER Color(85, 85, 85)    // 方块边框（灰度2）
+// 颜色定义 - 根据显示驱动选择不同的配色方案
+#ifdef DISPLAY_DRIVER_ST7306
+    // ST7306 4级灰度配色方案
+    #define COLOR_BACKGROUND Color(255, 255, 255)  // 白色背景（灰度0 - 最亮）
+    #define COLOR_BOARD_BG Color(170, 170, 170)    // 棋盘背景（灰度1）
+    #define COLOR_GRID Color(85, 85, 85)           // 网格线（灰度2）
+    #define COLOR_BORDER Color(0, 0, 0)            // 外框线（灰度3 - 最暗）
+    #define COLOR_TEXT Color(255, 255, 255)        // 文字颜色（白色）
+    #define COLOR_SCORE_BG Color(0, 0, 0)          // 状态栏背景（黑色）
+    #define COLOR_TILE_BORDER Color(85, 85, 85)    // 方块边框（灰度2）
 
-// 数字方块颜色 - ST7306 4级灰度优化设计
-// 设计理念：数字越大，背景越深，形成视觉重量感，适配ST7306的4级灰度
-const Color TILE_COLORS[] = {
-    Color(255, 255, 255), // 2: 白色背景 (灰度0 - 最亮)
-    Color(170, 170, 170), // 4: 浅灰背景 (灰度1)
-    Color(85, 85, 85),    // 8: 中灰背景 (灰度2)
-    Color(0, 0, 0),       // 16: 黑色背景 (灰度3 - 最暗)
-    Color(0, 0, 0),       // 32: 黑色背景
-    Color(0, 0, 0),       // 64: 黑色背景
-    Color(0, 0, 0),       // 128: 黑色背景
-    Color(0, 0, 0),       // 256: 黑色背景
-    Color(0, 0, 0),       // 512: 黑色背景
-    Color(0, 0, 0),       // 1024: 黑色背景
-    Color(0, 0, 0),       // 2048: 黑色背景
-    Color(0, 0, 0)        // 4096+: 黑色背景
-};
+    // 数字方块颜色 - ST7306 4级灰度优化设计
+    const Color TILE_COLORS[] = {
+        Color(255, 255, 255), // 2: 白色背景 (灰度0 - 最亮)
+        Color(170, 170, 170), // 4: 浅灰背景 (灰度1)
+        Color(85, 85, 85),    // 8: 中灰背景 (灰度2)
+        Color(0, 0, 0),       // 16: 黑色背景 (灰度3 - 最暗)
+        Color(0, 0, 0),       // 32: 黑色背景
+        Color(0, 0, 0),       // 64: 黑色背景
+        Color(0, 0, 0),       // 128: 黑色背景
+        Color(0, 0, 0),       // 256: 黑色背景
+        Color(0, 0, 0),       // 512: 黑色背景
+        Color(0, 0, 0),       // 1024: 黑色背景
+        Color(0, 0, 0),       // 2048: 黑色背景
+        Color(0, 0, 0)        // 4096+: 黑色背景
+    };
+#else
+    // ILI9488 深色主题配色方案
+    #define COLOR_BACKGROUND Color(0, 0, 0)        // 纯黑色背景
+    #define COLOR_BOARD_BG Color(40, 40, 40)       // 深灰色棋盘背景
+    #define COLOR_GRID Color(60, 60, 60)           // 中灰色网格线
+    #define COLOR_BORDER Color(80, 80, 80)         // 浅灰色外框线
+    #define COLOR_TEXT Color(255, 255, 255)        // 白色文字
+    #define COLOR_SCORE_BG Color(20, 30, 50)       // 蓝黑色状态栏背景
+    #define COLOR_TILE_BORDER Color(100, 100, 100) // 浅灰色方块边框
+
+    // 数字方块颜色 - ILI9488 深色主题优化设计
+    const Color TILE_COLORS[] = {
+        Color(238, 228, 218), // 2: 浅米色背景
+        Color(237, 224, 200), // 4: 浅橙色背景
+        Color(242, 177, 121), // 8: 橙色背景
+        Color(245, 149, 99),  // 16: 深橙色背景
+        Color(246, 124, 95),  // 32: 红橙色背景
+        Color(246, 94, 59),   // 64: 红色背景
+        Color(237, 207, 114), // 128: 黄色背景
+        Color(237, 204, 97),  // 256: 金黄色背景
+        Color(237, 200, 80),  // 512: 深金黄色背景
+        Color(237, 197, 63),  // 1024: 更深的金黄色背景
+        Color(237, 194, 46),  // 2048: 最深的金黄色背景
+        Color(60, 58, 50)     // 4096+: 深灰色背景
+    };
+#endif
 
 // 游戏状态
 enum class LocalGameState {
@@ -196,19 +223,37 @@ void drawTileText(uint16_t x, uint16_t y, int value) {
     
     // 根据背景色选择文字颜色，确保对比度
     Color textColor;
-    if (colorIndex <= 1) {
-        // 白色和浅灰背景用黑色文字
-        textColor = Color(0, 0, 0);
-    } else {
-        // 中灰和黑色背景用白色文字
-        textColor = Color(255, 255, 255);
-    }
+    #ifdef DISPLAY_DRIVER_ST7306
+        if (colorIndex <= 1) {
+            // 白色和浅灰背景用黑色文字
+            textColor = Color(0, 0, 0);
+        } else {
+            // 中灰和黑色背景用白色文字
+            textColor = Color(255, 255, 255);
+        }
+    #else
+        // ILI9488深色主题版本：根据背景亮度选择文字颜色
+        const Color& bgColor = TILE_COLORS[colorIndex];
+        uint8_t brightness = (bgColor.r * 299 + bgColor.g * 587 + bgColor.b * 114) / 1000;
+        if (brightness > 180) {
+            // 浅色背景用深色文字
+            textColor = Color(119, 110, 101); // 深棕色
+        } else {
+            // 深色背景用白色文字
+            textColor = Color(255, 255, 255); // 白色
+        }
+    #endif
     
-    // 使用Game2048优化字体绘制
-    // 由于编译时配置，我们知道当前使用的是ST7306，所以直接调用
+    // 使用Game2048优化字体绘制 - 统一支持两种驱动
     #ifdef DISPLAY_DRIVER_ST7306
         if (auto* st7306_adapter = static_cast<ST7306Adapter*>(g_display)) {
             st7306_adapter->drawStringGame2048(textX, textY, numStr, textColor, TILE_COLORS[colorIndex], fontSize);
+        } else {
+            g_display->drawString(textX, textY, numStr, textColor, TILE_COLORS[colorIndex], fontSize);
+        }
+    #elif defined(DISPLAY_DRIVER_ILI9488)
+        if (auto* ili9488_adapter = static_cast<ILI9488Adapter*>(g_display)) {
+            ili9488_adapter->drawStringGame2048(textX, textY, numStr, textColor, TILE_COLORS[colorIndex], fontSize);
         } else {
             g_display->drawString(textX, textY, numStr, textColor, TILE_COLORS[colorIndex], fontSize);
         }

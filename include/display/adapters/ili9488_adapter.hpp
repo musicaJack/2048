@@ -34,6 +34,10 @@ public:
     void drawString(int16_t x, int16_t y, const std::string& text, const Color& color, uint8_t size = 1) override;
     void drawString(int16_t x, int16_t y, const std::string& text, const Color& color, const Color& bgColor, uint8_t size = 1) override;
     
+    // Game2048优化字体绘制
+    void drawStringGame2048(int16_t x, int16_t y, const std::string& text, const Color& color, uint8_t size = 1);
+    void drawStringGame2048(int16_t x, int16_t y, const std::string& text, const Color& color, const Color& bgColor, uint8_t size = 1);
+    
     // 显示属性
     uint16_t getWidth() const override;
     uint16_t getHeight() const override;
