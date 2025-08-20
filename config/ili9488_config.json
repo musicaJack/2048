@@ -10,11 +10,12 @@
       "frequency": 40000000
     },
     "pins": {
-      "dc": 8,
-      "rst": 12,
-      "cs": 9,
-      "sclk": 10,
-      "mosi": 11
+      "dc": 20,
+      "rst": 15,
+      "cs": 17,
+      "sclk": 18,
+      "mosi": 19,
+      "bl": 16
     }
   },
   "game": {

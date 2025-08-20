@@ -21,17 +21,17 @@ namespace hal {
  */
 struct HardwareConfig {
     // SPI configuration
-    spi_inst_t* spi_inst = ILI9488_SPI_INST;          ///< SPI instance (spi0 or spi1)
-    uint32_t spi_speed_hz = ILI9488_SPI_SPEED_HZ;     ///< SPI speed in Hz (40MHz default)
+    spi_inst_t* spi_inst = spi0;          ///< SPI instance (spi0 or spi1) - 默认值，从配置文件读取
+    uint32_t spi_speed_hz = 40000000;     ///< SPI speed in Hz (40MHz default) - 默认值，从配置文件读取
     
     // GPIO pin assignments
-    uint8_t pin_sck = ILI9488_PIN_SCK;                ///< SPI clock pin
-    uint8_t pin_mosi = ILI9488_PIN_MOSI;              ///< SPI MOSI pin 
-    uint8_t pin_miso = ILI9488_PIN_MISO;              ///< SPI MISO pin (not used, 255 = disabled)
-    uint8_t pin_cs = ILI9488_PIN_CS;                  ///< Chip select pin
-    uint8_t pin_dc = ILI9488_PIN_DC;                  ///< Data/Command control pin
-    uint8_t pin_rst = ILI9488_PIN_RST;                ///< Reset pin
-    uint8_t pin_bl = ILI9488_PIN_BL;                  ///< Backlight PWM pin (255 = disabled)
+    uint8_t pin_sck = 0;                ///< SPI clock pin (从配置文件读取)
+uint8_t pin_mosi = 0;              ///< SPI MOSI pin (从配置文件读取)
+uint8_t pin_miso = 255;              ///< SPI MISO pin (not used, 255 = disabled)
+uint8_t pin_cs = 0;                  ///< Chip select pin (从配置文件读取)
+uint8_t pin_dc = 0;                  ///< Data/Command control pin (从配置文件读取)
+uint8_t pin_rst = 0;                ///< Reset pin (从配置文件读取)
+uint8_t pin_bl = 0;                  ///< Backlight PWM pin (从配置文件读取)
     
     // 默认构造函数
     HardwareConfig() = default;
@@ -149,7 +149,7 @@ public:
      * @param config Hardware configuration (only used on first call)
      * @return Reference to HAL instance
      */
-    static ILI9488HAL& getInstance(const HardwareConfig& config = {});
+    static ILI9488HAL& getInstance(const HardwareConfig& config = HardwareConfig{});
     
     /**
      * @brief Check if instance exists

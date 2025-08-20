@@ -11,22 +11,16 @@
 #define SPI_PORT_TFT spi0  // 显示屏使用 SPI0
 
 // 显示屏引脚定义 (SPI0 + 控制引脚)
-#define TFT_PIN_DC          20      // DC引脚 (GPIO20)   - 数据/命令切换
-#define TFT_PIN_RST         15      // RST引脚 (GPIO15)  - 复位
-#define TFT_PIN_CS          17      // CS引脚 (GPIO17)   - 片选
-#define TFT_PIN_SCK         18      // SCK引脚 (GPIO18)  - 时钟
-#define TFT_PIN_MOSI        19      // MOSI引脚 (GPIO19) - 主出从入
+// ST7306引脚配置 - 已移除硬编码，现在从配置文件读取
+// 这些定义不再使用，因为引脚配置从配置文件读取
 
 // 显示屏频率定义
 #define TFT_SPI_FREQUENCY   (40 * 1000 * 1000)  // 40MHz
 
 // 向后兼容性定义
 #define SPI_PORT        SPI_PORT_TFT
-#define PIN_DC          TFT_PIN_DC
-#define PIN_RST         TFT_PIN_RST
-#define PIN_CS          TFT_PIN_CS
-#define PIN_SCLK        TFT_PIN_SCK
-#define PIN_SDIN        TFT_PIN_MOSI
+// ST7306兼容性定义 - 已移除硬编码引用
+// 现在这些定义不再使用，因为引脚配置从配置文件读取
 #define SPI_FREQUENCY   TFT_SPI_FREQUENCY
 
 

@@ -1,4 +1,5 @@
 #include "config/config_manager.hpp"
+#include "config/embedded_config.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -24,6 +25,17 @@ bool ConfigManager::loadConfig(const std::string& config_file) {
     std::string json_content = buffer.str();
     
     return parseJsonConfig(json_content);
+}
+
+bool ConfigManager::loadEmbeddedConfig() {
+    const char* embedded_config = embedded_config::getEmbeddedConfig();
+    if (!embedded_config) {
+        std::cerr << "无法获取嵌入式配置" << std::endl;
+        return false;
+    }
+    
+    std::cout << "加载嵌入式配置..." << std::endl;
+    return parseJsonConfig(embedded_config);
 }
 
 bool ConfigManager::parseJsonConfig(const std::string& json_content) {
@@ -164,6 +176,19 @@ bool ConfigManager::parseJsonConfig(const std::string& json_content) {
                     }
                 }
             }
+            
+            // BL pin (背光引脚)
+            pin_pos = json_content.find("\"bl\"", pos);
+            if (pin_pos != std::string::npos) {
+                pin_pos = json_content.find(":", pin_pos);
+                if (pin_pos != std::string::npos) {
+                    size_t end = json_content.find_first_of(",}", pin_pos);
+                    if (end != std::string::npos) {
+                        std::string value = json_content.substr(pin_pos + 1, end - pin_pos - 1);
+                        display_config_.pins.bl = static_cast<uint8_t>(std::stoi(value));
+                    }
+                }
+            }
         }
         
         // 解析游戏配置
@@ -220,7 +245,8 @@ std::string ConfigManager::generateJsonConfig() const {
     json << "      \"rst\": " << static_cast<int>(display_config_.pins.rst) << ",\n";
     json << "      \"cs\": " << static_cast<int>(display_config_.pins.cs) << ",\n";
     json << "      \"sclk\": " << static_cast<int>(display_config_.pins.sclk) << ",\n";
-    json << "      \"mosi\": " << static_cast<int>(display_config_.pins.mosi) << "\n";
+    json << "      \"mosi\": " << static_cast<int>(display_config_.pins.mosi) << ",\n";
+    json << "      \"bl\": " << static_cast<int>(display_config_.pins.bl) << "\n";
     json << "    }\n";
     json << "  },\n";
     json << "  \"game\": {\n";

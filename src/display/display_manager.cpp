@@ -54,35 +54,23 @@ bool DisplayManager::initFromFile(const std::string& config_file) {
 }
 
 bool DisplayManager::init() {
-    // 使用编译时配置，无需加载配置文件
-    std::cout << "使用编译时配置初始化显示管理器" << std::endl;
-    std::cout << "当前显示驱动: " << CURRENT_DISPLAY_DRIVER << std::endl;
-    std::cout << "显示分辨率: " << DISPLAY_WIDTH << "x" << DISPLAY_HEIGHT << std::endl;
+    // 使用嵌入式配置初始化（编译时嵌入的配置）
+    std::cout << "使用嵌入式配置初始化显示管理器..." << std::endl;
     
-    // 创建默认配置
-    DisplayConfig config;
-    config.driver = CURRENT_DISPLAY_DRIVER;
-    config.rotation = 0;
-    config.brightness = 100;
-               config.pins.dc = display_config::DEFAULT_DC_PIN;
-           config.pins.rst = display_config::DEFAULT_RST_PIN;
-           config.pins.cs = display_config::DEFAULT_CS_PIN;
-           config.pins.sclk = display_config::DEFAULT_SCLK_PIN;
-           config.pins.mosi = display_config::DEFAULT_MOSI_PIN;
-           config.pins.bl = display_config::DEFAULT_BL_PIN;  // 添加背光引脚
-    config.hardware.spi_port = display_config::DEFAULT_SPI_PORT;
-    config.hardware.spi_frequency = display_config::DEFAULT_SPI_FREQUENCY;
+    // 加载嵌入式配置
+    if (!config_manager_.loadEmbeddedConfig()) {
+        std::cerr << "嵌入式配置加载失败，无法初始化显示管理器" << std::endl;
+        return false;
+    }
     
-    // 更新配置管理器
-    config_manager_.setDriverType(config.driver);
-    config_manager_.setRotation(config.rotation);
-    config_manager_.setBrightness(config.brightness);
+    const DisplayConfig& config = config_manager_.getDisplayConfig();
+    std::cout << "成功加载嵌入式配置，驱动类型: " << config.driver << std::endl;
     
     // 创建显示驱动
-    driver_ = createDriver(config.driver);
+    driver_ = createDriverWithConfig(config);
     
     if (!driver_) {
-        std::cerr << "无法创建显示驱动: " << config.driver << std::endl;
+        std::cerr << "无法创建显示驱动: " << config_manager_.getDriverType() << std::endl;
         return false;
     }
     
@@ -92,29 +80,32 @@ bool DisplayManager::init() {
         return false;
     }
     
-    std::cout << "显示管理器初始化成功" << std::endl;
+    std::cout << "显示管理器初始化成功（嵌入式配置模式）" << std::endl;
     return true;
 }
 
 std::unique_ptr<DisplayDriver> DisplayManager::createDriver(const std::string& driver_type) {
     const DisplayConfig& config = config_manager_.getDisplayConfig();
-    
+    return createDriverWithConfig(config);
+}
+
+std::unique_ptr<DisplayDriver> DisplayManager::createDriverWithConfig(const DisplayConfig& config) {
     // 使用编译时宏确定要创建的驱动
 #ifdef DISPLAY_DRIVER_ST7306
-    if (driver_type == "st7306") {
+    if (config.driver == "st7306") {
         std::cout << "创建ST7306显示驱动适配器" << std::endl;
         return std::make_unique<ST7306Adapter>(config);
     }
 #endif
 
 #ifdef DISPLAY_DRIVER_ILI9488
-    if (driver_type == "ili9488") {
+    if (config.driver == "ili9488") {
         std::cout << "创建ILI9488显示驱动适配器" << std::endl;
         return std::make_unique<ILI9488Adapter>(config);
     }
 #endif
 
-    std::cout << "未知的显示驱动类型或未在编译时启用: " << driver_type << std::endl;
+    std::cout << "未知的显示驱动类型或未在编译时启用: " << config.driver << std::endl;
     return nullptr;
 }
 
@@ -183,7 +174,8 @@ const DisplayConfig& DisplayManager::getConfig() const {
 }
 
 bool DisplayManager::reloadConfig() {
-    if (!config_manager_.loadConfig()) {
+    // 重新加载嵌入式配置
+    if (!config_manager_.loadEmbeddedConfig()) {
         return false;
     }
     

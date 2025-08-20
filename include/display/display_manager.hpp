@@ -13,7 +13,7 @@ public:
     static DisplayManager& getInstance();
     
     // 初始化显示管理器
-    bool initFromFile(const std::string& config_file = "config/display_config.json");  // 文件配置版本
+    bool initFromFile(const std::string& config_file);  // 文件配置版本
     bool init();  // 编译时配置版本（用于嵌入式环境）
     
     // 获取当前显示驱动
@@ -46,6 +46,7 @@ private:
     
     // 创建显示驱动实例
     std::unique_ptr<DisplayDriver> createDriver(const std::string& driver_type);
+    std::unique_ptr<DisplayDriver> createDriverWithConfig(const DisplayConfig& config);
     
     // 应用配置到驱动
     bool applyConfig(DisplayDriver* driver);

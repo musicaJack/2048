@@ -18,28 +18,23 @@ typedef struct i2c_inst i2c_inst_t;
 // ILI9488 SPI 显示屏引脚配置
 // =============================================================================
 
-// SPI 接口配置
-#define ILI9488_SPI_INST        spi0        // SPI接口实例，使用SPI0
-#define ILI9488_SPI_SPEED_HZ    40000000    // SPI速度40MHz
+// =============================================================================
+// 显示驱动配置 - 已移除硬编码，现在从配置文件读取
+// =============================================================================
 
-// SPI 信号引脚
-#define ILI9488_PIN_SCK         18          // SPI时钟引脚
-#define ILI9488_PIN_MOSI        19          // SPI数据输出引脚
-#define ILI9488_PIN_MISO        255         // SPI数据输入引脚（ILI9488不需要，设为255表示禁用）
-// 注意：ILI9488不需要MISO引脚，因为它是单向SPI通信
-
-// 控制信号引脚
-#define ILI9488_PIN_CS          17          // 片选引脚
-#define ILI9488_PIN_DC          20          // 数据/命令选择引脚
-#define ILI9488_PIN_RST         15          // 复位引脚
-#define ILI9488_PIN_BL          16          // 背光控制引脚
-
-// 背光亮度配置 (0-255)
-#define ILI9488_BACKLIGHT_BRIGHTNESS 128    // 50%亮度 (255 * 0.5 = 128)
+// 注意：所有显示驱动的引脚配置现在都从配置文件中读取
+// 不再使用硬编码的引脚定义
 
 // 背光控制方式
 // 1 = 使用PWM（可调亮度，可能引入纹波）；0 = 直流常亮/开关（无PWM纹波）
 #define ILI9488_BACKLIGHT_USE_PWM    1
+
+// 背光亮度配置 (0-255) - 默认值，实际从配置文件读取
+#define ILI9488_BACKLIGHT_BRIGHTNESS 128    // 50%亮度 (255 * 0.5 = 128)
+
+// SPI 接口配置 - 默认值，实际从配置文件读取
+#define ILI9488_SPI_INST        spi0        // SPI接口实例，使用SPI0
+#define ILI9488_SPI_SPEED_HZ    40000000    // SPI速度40MHz
 
 // =============================================================================
 // Joystick 手柄 I2C 配置
@@ -92,13 +87,8 @@ typedef struct i2c_inst i2c_inst_t;
 // 兼容性宏定义（保持向后兼容）
 // =============================================================================
 
-// ILI9488 兼容性定义
-#define PIN_DC                  ILI9488_PIN_DC
-#define PIN_RST                 ILI9488_PIN_RST
-#define PIN_CS                  ILI9488_PIN_CS
-#define PIN_SCK                 ILI9488_PIN_SCK
-#define PIN_MOSI                ILI9488_PIN_MOSI
-#define PIN_BL                  ILI9488_PIN_BL
+// 显示驱动兼容性定义 - 已移除硬编码引用
+// 现在这些定义不再使用，因为引脚配置从配置文件读取
 
 // Joystick 兼容性定义（保持向后兼容）
 #define JOYSTICK_I2C_PORT       JOYSTICK_I2C_INST
@@ -119,19 +109,8 @@ typedef struct i2c_inst i2c_inst_t;
 // 硬件配置验证宏
 // =============================================================================
 
-// 编译时验证引脚配置的合理性
-#if ILI9488_PIN_SCK == JOYSTICK_PIN_SDA || ILI9488_PIN_SCK == JOYSTICK_PIN_SCL
-    #warning "SPI SCK pin conflicts with I2C pins"
-#endif
-
-#if ILI9488_PIN_MOSI == JOYSTICK_PIN_SDA || ILI9488_PIN_MOSI == JOYSTICK_PIN_SCL
-    #warning "SPI MOSI pin conflicts with I2C pins"
-#endif
-
-// 检查MicroSD引脚冲突
-#if MICROSD_PIN_SCK == ILI9488_PIN_SCK || MICROSD_PIN_MOSI == ILI9488_PIN_MOSI
-    #warning "MicroSD SPI pins conflict with ILI9488 SPI pins"
-#endif
+// 编译时验证引脚配置的合理性 - 已移除显示驱动硬编码引用
+// 现在这些检查在运行时通过配置文件进行
 
 #if MICROSD_PIN_SCK == JOYSTICK_PIN_SDA || MICROSD_PIN_SCK == JOYSTICK_PIN_SCL
     #warning "MicroSD SCK pin conflicts with I2C pins"
@@ -145,8 +124,8 @@ typedef struct i2c_inst i2c_inst_t;
 // 辅助宏定义
 // =============================================================================
 
-// 获取完整的SPI配置
-#define ILI9488_GET_SPI_CONFIG() ILI9488_SPI_INST, ILI9488_PIN_DC, ILI9488_PIN_RST, ILI9488_PIN_CS, ILI9488_PIN_SCK, ILI9488_PIN_MOSI, ILI9488_PIN_BL, ILI9488_SPI_SPEED_HZ
+// 获取完整的SPI配置 - 已移除硬编码引用
+// 现在这些配置从配置文件中读取
 
 // 获取完整的Joystick配置
 #define JOYSTICK_GET_I2C_CONFIG() JOYSTICK_I2C_INST, JOYSTICK_I2C_ADDR, JOYSTICK_PIN_SDA, JOYSTICK_PIN_SCL, JOYSTICK_I2C_SPEED

@@ -45,7 +45,10 @@ public:
     static ConfigManager& getInstance();
     
     // 加载配置文件
-    bool loadConfig(const std::string& config_file = "config/display_config.json");
+    bool loadConfig(const std::string& config_file);
+    
+    // 加载嵌入式配置（编译时嵌入的配置）
+    bool loadEmbeddedConfig();
     
     // 获取显示配置
     const DisplayConfig& getDisplayConfig() const { return display_config_; }
@@ -61,7 +64,7 @@ public:
     void setBrightness(uint8_t brightness) { display_config_.brightness = brightness; }
     
     // 保存配置到文件
-    bool saveConfig(const std::string& config_file = "config/display_config.json");
+    bool saveConfig(const std::string& config_file);
     
     // 生成JSON配置字符串（用于测试）
     std::string generateJsonConfig() const;
