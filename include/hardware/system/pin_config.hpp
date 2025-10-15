@@ -37,7 +37,28 @@ typedef struct i2c_inst i2c_inst_t;
 #define ILI9488_SPI_SPEED_HZ    40000000    // SPI速度40MHz
 
 // =============================================================================
-// Joystick 手柄 I2C 配置
+// 霍尔摇杆直接连接配置 (RP2040内置ADC)
+// =============================================================================
+
+// 霍尔摇杆引脚定义
+#define HALL_JOYSTICK_PIN_X     26          // X轴ADC引脚 (GP26, ADC0)
+#define HALL_JOYSTICK_PIN_Y     27          // Y轴ADC引脚 (GP27, ADC1)  
+#define HALL_JOYSTICK_PIN_SW    22          // 开关引脚 (GP22)
+
+// ADC配置
+#define HALL_JOYSTICK_ADC_X_CHANNEL  0      // ADC通道0 (GP26)
+#define HALL_JOYSTICK_ADC_Y_CHANNEL  1      // ADC通道1 (GP27)
+
+// 霍尔摇杆操作参数配置
+#define HALL_JOYSTICK_THRESHOLD      1800   // 操作检测阈值
+#define HALL_JOYSTICK_LOOP_DELAY_MS  20     // 循环延迟时间（毫秒）
+#define HALL_JOYSTICK_DEADZONE       1000   // 摇杆死区阈值
+
+// LED配置
+#define HALL_JOYSTICK_LED_PIN        25      // PICO主板LED引脚 (GP25)
+
+// =============================================================================
+// Joystick 手柄 I2C 配置 (保留用于ADS1115方案)
 // =============================================================================
 
 // I2C 接口配置

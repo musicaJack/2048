@@ -26,6 +26,9 @@ public:
     // 获取最后输入时间
     uint32_t getLastInputTime() const { return last_input_time_; }
     
+    // 清除最后输入时间
+    void clearLastInputTime() { last_input_time_ = 0; }
+    
     // 检查是否有重置请求
     bool isResetRequested() { 
         bool requested = button_reset_requested_; 

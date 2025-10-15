@@ -44,18 +44,41 @@ void GameInputHandler::handleInput(GameLogic& logic, GameState& game_state) {
 
 bool GameInputHandler::handleDirectionInput(GameLogic& logic, GameState& game_state, 
                                           input::JoystickDirection direction) {
+    bool moved = false;
+    const char* direction_name = "";
+    
     switch (direction) {
         case input::JoystickDirection::UP:
-            return logic.moveUp(game_state);
+            direction_name = "UP";
+            moved = logic.moveUp(game_state);
+            break;
         case input::JoystickDirection::DOWN:
-            return logic.moveDown(game_state);
+            direction_name = "DOWN";
+            moved = logic.moveDown(game_state);
+            break;
         case input::JoystickDirection::LEFT:
-            return logic.moveLeft(game_state);
+            direction_name = "LEFT";
+            moved = logic.moveLeft(game_state);
+            break;
         case input::JoystickDirection::RIGHT:
-            return logic.moveRight(game_state);
+            direction_name = "RIGHT";
+            moved = logic.moveRight(game_state);
+            break;
+        case input::JoystickDirection::CENTER:
+            // 中心位置，不打印日志
+            return false;
         default:
             return false;
     }
+    
+    // 打印方向输入日志
+    if (moved) {
+        printf("用户输入: %s - 移动成功\n", direction_name);
+    } else {
+        printf("用户输入: %s - 无法移动\n", direction_name);
+    }
+    
+    return moved;
 }
 
 void GameInputHandler::resetGame(Game2048* game) {

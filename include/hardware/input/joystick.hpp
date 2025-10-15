@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "hardware/system/pin_config.hpp"
+#include "hardware/input/joystick_types.hpp"
 
 #define JOYSTICK_ADC_VALUE_12BITS_REG        0x00
 #define JOYSTICK_ADC_VALUE_8BITS_REG         0x10
@@ -18,8 +19,6 @@
 #define JOYSTICK_FIRMWARE_VERSION_REG        0xFE
 #define JOYSTICK_BOOTLOADER_VERSION_REG      0xFC
 #define JOYSTICK_I2C_ADDRESS_REG             0xFF
-
-typedef enum { ADC_8BIT_RESULT = 0, ADC_16BIT_RESULT } adc_mode_t;
 
 /**
  * @brief Joystick control API

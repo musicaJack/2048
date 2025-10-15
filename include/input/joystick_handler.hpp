@@ -5,6 +5,7 @@
 
 // 前向声明
 class Joystick;
+class HallJoystickDirect;
 
 namespace input {
 
@@ -17,10 +18,18 @@ enum class JoystickDirection {
     RIGHT
 };
 
+// 旋转角度枚举
+enum class JoystickRotation {
+    ROTATION_0,    // 0度，原始方向
+    ROTATION_90,   // 90度，顺时针旋转
+    ROTATION_180,  // 180度，旋转
+    ROTATION_270   // 270度，逆时针旋转
+};
+
 /**
  * @brief 摇杆处理器类
  * 
- * 负责处理摇杆输入，包括方向检测、死区处理等
+ * 负责处理摇杆输入，包括方向检测、死区处理、方向旋转等
  */
 class JoystickHandler {
 public:
@@ -33,6 +42,7 @@ public:
 
     // 初始化和更新
     bool initialize(Joystick* joystick);
+    bool initialize(HallJoystickDirect* joystick);
     void update();
 
     // 方向处理
@@ -47,19 +57,28 @@ public:
     // 配置
     void setDeadzone(int16_t deadzone);
     void setDirectionRatio(float ratio);
+    void setRotation(JoystickRotation rotation);
+    void setDebugMode(bool enable);
     int16_t getDeadzone() const;
     float getDirectionRatio() const;
+    JoystickRotation getRotation() const;
+    bool getDebugMode() const;
 
     // 工具方法
     std::string getDirectionString(JoystickDirection direction);
+    std::string getRotationString(JoystickRotation rotation);
+    JoystickDirection applyRotation(JoystickDirection original_direction) const;
 
 private:
     bool is_initialized_;
     Joystick* joystick_;
+    HallJoystickDirect* hall_joystick_direct_;
     int16_t deadzone_;
     float direction_ratio_;
+    JoystickRotation rotation_;
     JoystickDirection last_direction_;
     bool last_button_state_;
+    bool debug_mode_;
 };
 
 } // namespace input 

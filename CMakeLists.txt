@@ -49,6 +49,7 @@ add_library(hardware_drivers
     src/hardware/display/ili9488/hybrid_font_system.cpp
     # 摇杆驱动文件
     src/hardware/input/joystick.cpp
+    src/hardware/input/hall_joystick_direct.cpp
 )
 
 # 设置硬件驱动库包含目录
@@ -206,6 +207,19 @@ target_link_libraries(game2048_unified
 )
 pico_add_extra_outputs(game2048_unified)
 
+# 创建霍尔摇杆2048游戏程序
+add_executable(game2048_hall_joystick examples/game_2048_hall_joystick.cpp)
+target_compile_options(game2048_hall_joystick PRIVATE -fexceptions)
+pico_enable_stdio_usb(game2048_hall_joystick 1)
+pico_enable_stdio_uart(game2048_hall_joystick 0)
+target_link_libraries(game2048_hall_joystick
+    game2048_core
+    config_manager
+    display_manager
+    pico_stdlib
+)
+pico_add_extra_outputs(game2048_hall_joystick)
+
 
 
 # 打印构建信息
@@ -216,7 +230,9 @@ message(STATUS "  - Pico SDK Path: $ENV{PICO_SDK_PATH}")
 message(STATUS "  - Output Directory: ${CMAKE_BINARY_DIR}")
 message(STATUS "")
 message(STATUS "Available Targets:")
-message(STATUS "  - game2048_unified: 统一2048游戏程序（推荐使用）")
+message(STATUS "  - game2048_unified: 统一2048游戏程序（I2C摇杆版本）")
+message(STATUS "  - game2048_hall_joystick: 霍尔摇杆2048游戏程序（推荐使用）")
 message(STATUS "")
 message(STATUS "Build Commands:")
-message(STATUS "  - cmake --build . --target game2048_unified") 
+message(STATUS "  - cmake --build . --target game2048_unified")
+message(STATUS "  - cmake --build . --target game2048_hall_joystick") 
