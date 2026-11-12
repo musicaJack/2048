@@ -4,6 +4,12 @@ A 2048 game project based on Raspberry Pi Pico with support for both ST7306 refl
 
 ## Latest Updates
 
+### 2026-11-12 - ESP32-S3-Pico
+
+The ILI9488 build now runs on the Waveshare ESP32-S3-Pico. The IDF project lives in `esp32/` and is separate from the Pico CMake build. Pins, the flash port, and the layout are in `docs/ESP32-S3迁移手册.md`. ST7306 is still Pico-only.
+
+Scoring follows classic 2048: the game starts at 0, and a merge adds the value of the new tile.
+
 ### 2024-12-19 - v2.0 Major Refactoring
 - **Dual Display Support**: Added support for both ST7306 (4-level grayscale) and ILI9488 (color) displays
 - **Unified Game Architecture**: Created modular game architecture with separate UI, input, state, and animation managers

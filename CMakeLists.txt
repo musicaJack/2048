@@ -114,7 +114,6 @@ add_library(game2048_core
     src/game/game_input.cpp
     src/game/game_state_manager.cpp
     src/game/game_animation.cpp
-    src/game/game_board.cpp
     src/game/game_logic.cpp
     src/game/game_state.cpp
     src/input/input_manager.cpp

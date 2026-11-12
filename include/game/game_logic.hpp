@@ -30,16 +30,15 @@ public:
 
     // 辅助方法
     bool canMove(const GameState& game_state) const;
-    int calculateScore(const BoardArray& board) const;
 
 private:
-    // 行移动辅助方法
-    bool moveRowLeft(int row[BOARD_SIZE]);
-    bool moveRowRight(int row[BOARD_SIZE]);
+    // 行移动辅助方法。gained 累加本次合并得到的新方块数值。
+    bool moveRowLeft(int row[BOARD_SIZE], int& gained);
+    bool moveRowRight(int row[BOARD_SIZE], int& gained);
     
     // 列移动辅助方法
-    bool moveColumnUp(BoardArray& board, int col);
-    bool moveColumnDown(BoardArray& board, int col);
+    bool moveColumnUp(BoardArray& board, int col, int& gained);
+    bool moveColumnDown(BoardArray& board, int col, int& gained);
 };
 
 } // namespace game2048 

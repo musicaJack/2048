@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include "pico/stdlib.h"
 
 namespace game2048 {
 

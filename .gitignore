@@ -1,4 +1,7 @@
 .build/
+build-ili9488/
+build-st7306/
+.DS_Store
 .vscode/
 
 # Prerequisites

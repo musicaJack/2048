@@ -6,6 +6,23 @@
 #include "game/game_state.hpp"
 #include <cstring>
 #include <cstdlib>
+#if defined(ESP_PLATFORM)
+#include "esp_timer.h"
+#else
+#include "pico/stdlib.h"
+#endif
+
+namespace {
+
+uint32_t now_ms() {
+#if defined(ESP_PLATFORM)
+    return static_cast<uint32_t>(esp_timer_get_time() / 1000);
+#else
+    return to_ms_since_boot(get_absolute_time());
+#endif
+}
+
+}  // namespace
 
 namespace game2048 {
 
@@ -33,32 +50,11 @@ void GameState::resetBoard() {
     // 添加两个初始数字
     addRandomTile();
     addRandomTile();
-    
-    // 计算初始分数
+
     current_score_ = 0;
-    for (int i = 0; i < BOARD_SIZE; ++i) {
-        for (int j = 0; j < BOARD_SIZE; ++j) {
-            int value = board_[i][j];
-            if (value > 0) {
-                // 基础分数：数字的平方值
-                current_score_ += value * value;
-                
-                // 位置奖励：角落位置获得额外奖励
-                if ((i == 0 && j == 0) || (i == 0 && j == 3) || 
-                    (i == 3 && j == 0) || (i == 3 && j == 3)) {
-                    current_score_ += value * 10; // 角落奖励
-                }
-                
-                // 大数字奖励：高数值获得额外奖励
-                if (value >= 128) {
-                    current_score_ += value * 5; // 大数字奖励
-                }
-            }
-        }
-    }
     
     game_status_ = GameStatus::PLAYING;
-    game_start_time_ = to_ms_since_boot(get_absolute_time());
+    game_start_time_ = now_ms();
     last_move_time_ = game_start_time_;
 }
 
@@ -152,7 +148,7 @@ uint32_t GameState::getCurrentScore() const {
 
 uint32_t GameState::getGameTime() const {
     if (game_status_ == GameStatus::PLAYING) {
-        return to_ms_since_boot(get_absolute_time()) - game_start_time_;
+        return now_ms() - game_start_time_;
     }
     return last_move_time_ - game_start_time_;
 }
@@ -166,7 +162,7 @@ BoardArray& GameState::getBoard() {
 }
 
 void GameState::updateLastMoveTime() {
-    last_move_time_ = to_ms_since_boot(get_absolute_time());
+    last_move_time_ = now_ms();
 }
 
 } // namespace game2048 
