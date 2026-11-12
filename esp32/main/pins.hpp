@@ -17,7 +17,7 @@ static constexpr int PIN_LCD_DC = 4;      // Pico GP20
 
 static constexpr uint8_t JOYSTICK_ADDR = 0x63;
 static constexpr int I2C_HZ = 100000;
-static constexpr int SPI_HZ_BRINGUP = 10 * 1000 * 1000;
+static constexpr int SPI_HZ_BRINGUP = 20 * 1000 * 1000;
 
 static constexpr int JOYSTICK_DEADZONE = 1000;
 static constexpr int JOYSTICK_THRESHOLD = 1800;

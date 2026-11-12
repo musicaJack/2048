@@ -6,7 +6,7 @@ A 2048 game project based on Raspberry Pi Pico with support for both ST7306 refl
 
 ### 2026-11-12 - ESP32-S3-Pico
 
-The ILI9488 build now runs on the Waveshare ESP32-S3-Pico. The IDF project lives in `esp32/` and is separate from the Pico CMake build. Pins, the flash port, and the layout are in `docs/ESP32-S3迁移手册.md`. ST7306 is still Pico-only.
+The ILI9488 build now runs on the Waveshare ESP32-S3-Pico. The IDF project lives in `esp32/` and is separate from the Pico CMake build. The board is black, each cell has a red frame, and the digits use the classic tile colors with no tile fill. Pins, the flash port, and the layout are in `docs/ESP32-S3迁移手册.md`. ST7306 is still Pico-only.
 
 Scoring follows classic 2048: the game starts at 0, and a merge adds the value of the new tile.
 

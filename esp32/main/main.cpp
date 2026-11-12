@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 
+#include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -19,10 +20,11 @@ struct Rgb {
 };
 
 constexpr Rgb BG{0, 0, 0};
-constexpr Rgb BOARD{40, 40, 40};
-constexpr Rgb DARK{119, 110, 101};
+constexpr Rgb INK{0, 0, 0};
 constexpr Rgb LIGHT{255, 255, 255};
+constexpr Rgb FRAME{255, 0, 0};
 constexpr Rgb CELL{60, 58, 50};
+constexpr int kBorder = 3;
 
 Rgb tileColor(int value) {
     switch (value) {
@@ -117,19 +119,93 @@ int boardOriginX() {
     return (Ili9488Panel::WIDTH - kBoardPx) / 2;
 }
 
-void drawCell(Ili9488Panel& lcd, int row, int col, int value) {
-    const int x = boardOriginX() + col * (kCell + kGap);
-    const int y = kBoardY + row * (kCell + kGap);
-    const Rgb color = tileColor(value);
-    lcd.fillRect(x, y, kCell, kCell, color.r, color.g, color.b);
-    if (value <= 0) {
+constexpr int kFrame = kGap;
+constexpr int kImageW = kBoardPx + kFrame * 2;
+constexpr int kImageH = kImageW;
+
+void fillImage(uint8_t* img, int x, int y, int w, int h, Rgb c) {
+    for (int row = 0; row < h; ++row) {
+        uint8_t* dst = img + (static_cast<size_t>(y + row) * kImageW + x) * 3;
+        for (int col = 0; col < w; ++col) {
+            dst[col * 3] = c.r;
+            dst[col * 3 + 1] = c.g;
+            dst[col * 3 + 2] = c.b;
+        }
+    }
+}
+
+void drawImageDigit(uint8_t* img, int x, int y, int digit, int scale, Rgb fg, Rgb bg) {
+    for (int row = 0; row < 5; ++row) {
+        for (int col = 0; col < 3; ++col) {
+            const bool on = (DIGIT[digit][row] & (1 << (2 - col))) != 0;
+            fillImage(img, x + col * scale, y + row * scale, scale, scale, on ? fg : bg);
+        }
+    }
+}
+
+void drawImageNumber(uint8_t* img, int x, int y, int value, int scale, Rgb fg, Rgb bg) {
+    char text[12];
+    int n = 0;
+    int v = value;
+    if (v == 0) {
+        text[n++] = '0';
+    } else {
+        char rev[12];
+        int r = 0;
+        while (v > 0 && r < 11) {
+            rev[r++] = static_cast<char>('0' + (v % 10));
+            v /= 10;
+        }
+        while (r > 0) {
+            text[n++] = rev[--r];
+        }
+    }
+    const int advance = 3 * scale + scale;
+    for (int i = 0; i < n; ++i) {
+        drawImageDigit(img, x + i * advance, y, text[i] - '0', scale, fg, bg);
+    }
+}
+
+uint8_t* boardImage() {
+    static uint8_t* img = nullptr;
+    if (img != nullptr) {
+        return img;
+    }
+    const size_t bytes = static_cast<size_t>(kImageW) * kImageH * 3;
+    img = static_cast<uint8_t*>(heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
+    if (img == nullptr) {
+        img = static_cast<uint8_t*>(heap_caps_malloc(bytes, MALLOC_CAP_8BIT));
+    }
+    return img;
+}
+
+void paintBoard(Ili9488Panel& lcd, const int (&cells)[4][4]) {
+    uint8_t* img = boardImage();
+    if (img == nullptr) {
         return;
     }
-    const int scale = value >= 1000 ? 4 : 6;
-    const int text_w = numberWidth(value, scale);
-    const int text_h = 5 * scale;
-    const Rgb ink = value >= 8 ? LIGHT : DARK;
-    drawNumber(lcd, x + (kCell - text_w) / 2, y + (kCell - text_h) / 2, value, scale, ink, color);
+    fillImage(img, 0, 0, kImageW, kImageH, BG);
+    for (int row = 0; row < 4; ++row) {
+        for (int col = 0; col < 4; ++col) {
+            const int value = cells[row][col];
+            const int x = kFrame + col * (kCell + kGap);
+            const int y = kFrame + row * (kCell + kGap);
+            fillImage(img, x, y, kCell, kBorder, FRAME);
+            fillImage(img, x, y + kCell - kBorder, kCell, kBorder, FRAME);
+            fillImage(img, x, y, kBorder, kCell, FRAME);
+            fillImage(img, x + kCell - kBorder, y, kBorder, kCell, FRAME);
+            fillImage(img, x + kBorder, y + kBorder, kCell - kBorder * 2, kCell - kBorder * 2, INK);
+            if (value <= 0) {
+                continue;
+            }
+            const int scale = value >= 1000 ? 4 : 6;
+            const int text_w = numberWidth(value, scale);
+            const int text_h = 5 * scale;
+            drawImageNumber(img, x + (kCell - text_w) / 2, y + (kCell - text_h) / 2, value, scale,
+                            tileColor(value), INK);
+        }
+    }
+    lcd.blit(boardOriginX() - kFrame, kBoardY - kFrame, kImageW, kImageH, img);
 }
 
 void drawScore(Ili9488Panel& lcd, int score) {
@@ -152,13 +228,10 @@ void drawBoard(Ili9488Panel& lcd, const game2048::GameState& state, bool full) {
     if (full || !g_frame.ready) {
         lcd.fillScreen(BG.r, BG.g, BG.b);
         drawNumber(lcd, 16, 28, 2048, 6, LIGHT, BG);
-        const int x0 = boardOriginX();
-        lcd.fillRect(x0 - kGap, kBoardY - kGap, kBoardPx + kGap * 2, kBoardPx + kGap * 2,
-                     BOARD.r, BOARD.g, BOARD.b);
         drawScore(lcd, score);
+        paintBoard(lcd, cells);
         for (int row = 0; row < 4; ++row) {
             for (int col = 0; col < 4; ++col) {
-                drawCell(lcd, row, col, cells[row][col]);
                 g_frame.cells[row][col] = cells[row][col];
             }
         }
@@ -170,13 +243,14 @@ void drawBoard(Ili9488Panel& lcd, const game2048::GameState& state, bool full) {
     int changed = 0;
     for (int row = 0; row < 4; ++row) {
         for (int col = 0; col < 4; ++col) {
-            if (g_frame.cells[row][col] == cells[row][col]) {
-                continue;
+            if (g_frame.cells[row][col] != cells[row][col]) {
+                ++changed;
             }
-            drawCell(lcd, row, col, cells[row][col]);
             g_frame.cells[row][col] = cells[row][col];
-            ++changed;
         }
+    }
+    if (changed > 0) {
+        paintBoard(lcd, cells);
     }
     if (score != g_frame.score) {
         drawScore(lcd, score);

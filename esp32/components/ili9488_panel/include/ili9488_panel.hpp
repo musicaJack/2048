@@ -32,10 +32,15 @@ private:
     void writeData(const uint8_t* data, int len);
     void writeData(const uint8_t* data, int len, int dc_level);
     void setWindow(int x0, int y0, int x1, int y1);
+    // 片选由 GPIO 按住，一整块像素送完再松开。硬件片选会在每次 DMA 结束时提前抬起。
+    void beginPixelWrite();
+    void writePixelChunk(const uint8_t* data, int len, bool last);
+    void endPixelWrite();
 
     int dc_ = -1;
     int bl_ = -1;
     bool backlight_on_ = false;
     void* spi_ = nullptr;
     uint8_t* line_ = nullptr;
+    bool pixel_write_open_ = false;
 };
