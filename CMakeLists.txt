@@ -203,6 +203,10 @@ target_link_libraries(game2048_unified
     display_manager
     pico_stdlib
 )
+# RP2350 + ST7306 的产物用 Game2350 开头，和 RP2040 的 game2048_unified.uf2 分开。
+if(USE_ST7306_DISPLAY AND PICO_BOARD STREQUAL "pico2")
+    set_target_properties(game2048_unified PROPERTIES OUTPUT_NAME Game2350_st7306)
+endif()
 pico_add_extra_outputs(game2048_unified)
 
 
@@ -215,7 +219,11 @@ message(STATUS "  - Pico SDK Path: $ENV{PICO_SDK_PATH}")
 message(STATUS "  - Output Directory: ${CMAKE_BINARY_DIR}")
 message(STATUS "")
 message(STATUS "Available Targets:")
-message(STATUS "  - game2048_unified: 统一2048游戏程序（推荐使用）")
+if(USE_ST7306_DISPLAY AND PICO_BOARD STREQUAL "pico2")
+    message(STATUS "  - game2048_unified: 产物文件名为 Game2350_st7306.uf2")
+else()
+    message(STATUS "  - game2048_unified: 统一2048游戏程序（推荐使用）")
+endif()
 message(STATUS "")
 message(STATUS "Build Commands:")
 message(STATUS "  - cmake --build . --target game2048_unified") 

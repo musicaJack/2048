@@ -133,6 +133,7 @@ cmake .. -DUSE_ST7306_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
 cd ..
 cmake -S . -B build-st7306-rp2350 -DUSE_ST7306_DISPLAY=ON -DUSE_ILI9488_DISPLAY=OFF -DPICO_BOARD=pico2
 cmake --build build-st7306-rp2350 --target game2048_unified
+# 产物是 build-st7306-rp2350/Game2350_st7306.uf2
 
 # 配置ILI9488版本
 cmake .. -DUSE_ILI9488_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release

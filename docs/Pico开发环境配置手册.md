@@ -213,7 +213,7 @@ cmake --build build-st7306-rp2350 --target game2048_unified
 ```text
 build-ili9488/game2048_unified.uf2          # RP2040
 build-st7306/game2048_unified.uf2           # RP2040
-build-st7306-rp2350/game2048_unified.uf2    # RP2350
+build-st7306-rp2350/Game2350_st7306.uf2       # RP2350，文件名以 Game2350 开头
 ```
 
 不写 `PICO_BOARD` 时，SDK 默认是 `pico`（RP2040）。那份 UF2 的家族号是 `0xe48bff56`，RP2350 的引导程序会忽略它：文件拷进去了，板子没有任何变化。RP2350 用上面的 `build-st7306-rp2350`，家族号是 `0xe48bff59`。
@@ -230,7 +230,7 @@ ST7306 这块板上的摇杆不是 I2C。X 接 GPIO26（ADC0），Y 接 GPIO27�
 cp build-ili9488/game2048_unified.uf2 /Volumes/RPI-RP2/
 # RP2350 的卷名是 RP2350。macOS 的 cp 会带上扩展属性，拷贝可能失败。
 # 用重定向写进去，卷消失表示引导程序收下了这份固件。
-cat build-st7306-rp2350/game2048_unified.uf2 > /Volumes/RP2350/game2048_unified.uf2
+cat build-st7306-rp2350/Game2350_st7306.uf2 > /Volumes/RP2350/Game2350_st7306.uf2
 # 或
 picotool load -f build-ili9488/game2048_unified.uf2
 picotool reboot
