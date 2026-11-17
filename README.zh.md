@@ -4,6 +4,12 @@
 
 ## 最新更新
 
+### 2026-11-17 - RP2350 上的 ST7306
+
+ST7306 版可以在 RP2350 上玩。这块板上的摇杆是模拟量：X 接 GPIO26，Y 接 GPIO27，按键接 GPIO22，按下为低电平。ILI9488 和 ESP32 仍用 I2C 摇杆（GPIO6、GPIO7，地址 0x63）。
+
+RP2350 要单独建一个目录，并加上 `-DPICO_BOARD=pico2`。`build-st7306/` 里的 UF2 是 RP2040 的，拷到 RP2350 上引导程序会直接忽略。编译和烧录见 `docs/Pico开发环境配置手册.md`。
+
 ### 2026-11-12 - ESP32-S3-Pico
 
 ILI9488 版已跑在微雪 ESP32-S3-Pico 上。工程在 `esp32/`，和 Pico 的 CMake 分开。画面是黑底、红色格子框，数字用经典方块颜色，没有方块底色。引脚、烧录口和画面见 `docs/ESP32-S3迁移手册.md`。ST7306 仍只有 Pico 的 UF2。
@@ -21,9 +27,9 @@ ILI9488 版已跑在微雪 ESP32-S3-Pico 上。工程在 `esp32/`，和 Pico 的
 ## 硬件要求
 
 ### 方案一：ST7306反射式LCD配置
-- **Raspberry Pi Pico (RP2040)**
-- **ST7306反射式LCD显示屏** (128×64分辨率，4级灰度)
-- **I2C摇杆控制器** (地址: 0x63)
+- **Raspberry Pi Pico（RP2040）或 Pico 2（RP2350）**
+- **ST7306反射式LCD显示屏**（300×400，4级灰度）
+- **模拟摇杆**：X 为 GPIO26，Y 为 GPIO27，按键为 GPIO22
 
 ### 方案二：ILI9488彩色TFT配置
 - **Raspberry Pi Pico (RP2040)**
@@ -55,7 +61,16 @@ Pico 3.3V  -> 显示屏 VCC
 Pico GND   -> 显示屏 GND
 ```
 
-### I2C摇杆连接（两种配置通用）
+### ST7306 模拟摇杆
+```
+Pico GPIO26 -> 摇杆 X（ADC0）
+Pico GPIO27 -> 摇杆 Y（ADC1）
+Pico GPIO22 -> 摇杆按键（内部上拉，按下为低）
+Pico 3.3V   -> 摇杆 VCC
+Pico GND    -> 摇杆 GND
+```
+
+### I2C摇杆连接（ILI9488 和 ESP32）
 ```
 Pico GPIO6  -> 摇杆 SDA
 Pico GPIO7  -> 摇杆 SCL
@@ -111,8 +126,13 @@ clean.bat
 mkdir build
 cd build
 
-# 配置ST7306版本
+# 配置ST7306版本（RP2040）
 cmake .. -DUSE_ST7306_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
+
+# 回到仓库根目录再配 RP2350，不要复用 build/ 里的缓存
+cd ..
+cmake -S . -B build-st7306-rp2350 -DUSE_ST7306_DISPLAY=ON -DUSE_ILI9488_DISPLAY=OFF -DPICO_BOARD=pico2
+cmake --build build-st7306-rp2350 --target game2048_unified
 
 # 配置ILI9488版本
 cmake .. -DUSE_ILI9488_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
@@ -231,9 +251,9 @@ make game2048_unified -j4
 ### 摇杆问题
 
 1. **无响应**
-   - 检查I2C连接（GPIO6、GPIO7）
-   - 验证摇杆地址（0x63）
-   - 检查电源连接
+   - ST7306：检查 GPIO26、GPIO27、GPIO22。这块板不走 I2C
+   - ILI9488：检查 I2C 连接（GPIO6、GPIO7）和地址 0x63
+   - RP2350 上如果画面正常但摇杆不动，先确认固件是用 `-DPICO_BOARD=pico2` 编出来的 ST7306 版本
 
 2. **输入异常**
    - 校准摇杆死区

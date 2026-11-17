@@ -1,5 +1,27 @@
 # Commit log
 
+## 2026-11-17 — RP2350 上的 ST7306 摇杆
+
+### Summary
+
+RP2350 配 ST7306 时，摇杆改成和阅读器同一套模拟输入。X 是 GPIO26，Y 是 GPIO27，按键是 GPIO22。ILI9488 仍用 GPIO6、GPIO7 上的 I2C 摇杆。RP2040 的 UF2 不能拿去刷 RP2350。
+
+### 主要变更
+
+- `src/hardware/input/joystick.cpp`：ST7306 编译读 ADC，其它目标保持硬件 I2C
+- `include/hardware/system/pin_config.hpp`：写下模拟摇杆的三根脚
+- `examples/game_2048_unified.cpp`：摇杆初始化失败时仍画出棋盘
+- `docs/Pico开发环境配置手册.md`、两份 README：补上 RP2350 的构建目录和接线
+
+建议说明：
+
+```
+feat: RP2350 的 ST7306 改用模拟摇杆
+
+这块板上的摇杆接在 GPIO26、GPIO27 和 GPIO22，不是 I2C。
+RP2350 需要单独用 pico2 构建，RP2040 的 UF2 会被引导程序忽略。
+```
+
 ## 2026-11-12 — 黑底红框
 
 ### Summary

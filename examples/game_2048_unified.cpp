@@ -105,8 +105,7 @@ int main() {
     logPrint("正在初始化摇杆...");
     g_joystick = new Joystick();
     if (!g_joystick->begin(JOYSTICK_I2C_INST)) {
-        logPrint("错误: 摇杆硬件初始化失败!");
-        return -1;
+        logPrint("错误: 摇杆硬件初始化失败，游戏继续显示");
     }
     
     // 初始化摇杆处理器

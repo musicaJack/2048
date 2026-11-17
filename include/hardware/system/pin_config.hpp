@@ -45,9 +45,14 @@ typedef struct i2c_inst i2c_inst_t;
 #define JOYSTICK_I2C_ADDR       0x63        // I2C设备地址
 #define JOYSTICK_I2C_SPEED      100000      // I2C速度（100kHz）
 
-// I2C 信号引脚
+// I2C 信号引脚。ILI9488 和 ESP32 用这组。ST7306 编译不走这里。
 #define JOYSTICK_PIN_SDA        6           // I2C数据引脚
 #define JOYSTICK_PIN_SCL        7           // I2C时钟引脚
+
+// ST7306 板上的摇杆是 ADC，按键低电平有效。
+#define ST7306_JOYSTICK_PIN_X       26
+#define ST7306_JOYSTICK_PIN_Y       27
+#define ST7306_JOYSTICK_PIN_BUTTON  22
 
 // Joystick 操作参数配置
 #define JOYSTICK_THRESHOLD      1800        // 操作检测阈值

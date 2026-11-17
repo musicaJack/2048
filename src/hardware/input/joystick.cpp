@@ -1,7 +1,16 @@
 #include "hardware/input/joystick.hpp"
+#include "hardware/adc.h"
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
 #include <cstring> // For memcpy
+
+#ifdef DISPLAY_DRIVER_ST7306
+// ST7306 板子上的摇杆是模拟量，和 MicroSDTextReader_ST7306 同一组脚。
+static uint16_t read_stick_adc(uint channel) {
+    adc_select_input(channel);
+    return adc_read();
+}
+#endif
 
 // Helper function for reading bytes from a specific register
 static inline int reg_read(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, uint8_t *buf, uint8_t nbytes) {
@@ -29,6 +38,23 @@ static inline int reg_write(i2c_inst_t *i2c, uint8_t addr, uint8_t reg, const ui
 
 bool Joystick::begin(i2c_inst_t *i2c_port, uint8_t addr, uint sda_pin, uint scl_pin, uint32_t speed)
 {
+#ifdef DISPLAY_DRIVER_ST7306
+    (void)i2c_port;
+    (void)addr;
+    (void)sda_pin;
+    (void)scl_pin;
+    (void)speed;
+    adc_init();
+    adc_gpio_init(ST7306_JOYSTICK_PIN_X);
+    adc_gpio_init(ST7306_JOYSTICK_PIN_Y);
+    gpio_init(ST7306_JOYSTICK_PIN_BUTTON);
+    gpio_set_dir(ST7306_JOYSTICK_PIN_BUTTON, GPIO_IN);
+    gpio_pull_up(ST7306_JOYSTICK_PIN_BUTTON);
+    const uint16_t x = read_stick_adc(ST7306_JOYSTICK_PIN_X - 26);
+    const uint16_t y = read_stick_adc(ST7306_JOYSTICK_PIN_Y - 26);
+    printf("模拟摇杆 X=%u Y=%u 按键=%d\n", x, y, gpio_get(ST7306_JOYSTICK_PIN_BUTTON));
+    return true;
+#else
     _i2c_port = i2c_port;
     _addr     = addr;
     _sda_pin  = sda_pin;
@@ -51,6 +77,7 @@ bool Joystick::begin(i2c_inst_t *i2c_port, uint8_t addr, uint sda_pin, uint scl_
     int ret = i2c_write_blocking(_i2c_port, _addr, &dummy_byte, 0, false);
 
     return (ret >= 0); // Returns PICO_ERROR_GENERIC (-1) if NACK received (no device)
+#endif
 }
 
 uint16_t Joystick::get_joy_adc_value_x(adc_mode_t adc_bits)
@@ -129,18 +156,29 @@ uint16_t Joystick::get_joy_adc_value_y(adc_mode_t adc_bits)
 
 int16_t Joystick::get_joy_adc_12bits_offset_value_x(void)
 {
+#ifdef DISPLAY_DRIVER_ST7306
+    // 阅读器里 X 偏正是向左，取反后交给现有的方向判断。
+    const int raw = read_stick_adc(ST7306_JOYSTICK_PIN_X - 26);
+    return static_cast<int16_t>(2048 - raw);
+#else
     int16_t value = 0;
     uint8_t reg = JOYSTICK_OFFSET_ADC_VALUE_12BITS_REG;
     reg_read(_i2c_port, _addr, reg, (uint8_t *)&value, 2);
     return value;
+#endif
 }
 
 int16_t Joystick::get_joy_adc_12bits_offset_value_y(void)
 {
+#ifdef DISPLAY_DRIVER_ST7306
+    const int raw = read_stick_adc(ST7306_JOYSTICK_PIN_Y - 26);
+    return static_cast<int16_t>(2048 - raw);
+#else
     int16_t value = 0;
     uint8_t reg = JOYSTICK_OFFSET_ADC_VALUE_12BITS_REG + 2;
     reg_read(_i2c_port, _addr, reg, (uint8_t *)&value, 2);
     return value;
+#endif
 }
 
 int8_t Joystick::get_joy_adc_8bits_offset_value_x(void)
@@ -199,10 +237,14 @@ void Joystick::get_joy_adc_value_cal(uint16_t *x_neg_min, uint16_t *x_neg_max, u
 
 uint8_t Joystick::get_button_value(void)
 {
+#ifdef DISPLAY_DRIVER_ST7306
+    return gpio_get(ST7306_JOYSTICK_PIN_BUTTON) ? 1 : 0;
+#else
     uint8_t data = 1; // Default to not pressed
     uint8_t reg = JOYSTICK_BUTTON_REG;
     reg_read(_i2c_port, _addr, reg, &data, 1);
     return data;
+#endif
 }
 
 void Joystick::set_rgb_color(uint32_t color)

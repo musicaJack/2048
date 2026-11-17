@@ -200,16 +200,25 @@ cmake --build build-ili9488 --target game2048_unified
 cmake -S . -B build-st7306 -G Ninja -DCMAKE_BUILD_TYPE=Release \
   -DUSE_ST7306_DISPLAY=ON -DUSE_ILI9488_DISPLAY=OFF
 cmake --build build-st7306 --target game2048_unified
+
+# RP2350 + ST7306。再开一个目录，不要复用 build-st7306 的缓存
+cmake -S . -B build-st7306-rp2350 -G Ninja -DCMAKE_BUILD_TYPE=Release \
+  -DPICO_BOARD=pico2 \
+  -DUSE_ST7306_DISPLAY=ON -DUSE_ILI9488_DISPLAY=OFF
+cmake --build build-st7306-rp2350 --target game2048_unified
 ```
 
 两个显示选项不能同时为 ON。产物：
 
 ```text
-build-ili9488/game2048_unified.uf2
-build-st7306/game2048_unified.uf2
+build-ili9488/game2048_unified.uf2          # RP2040
+build-st7306/game2048_unified.uf2           # RP2040
+build-st7306-rp2350/game2048_unified.uf2    # RP2350
 ```
 
-这个工程的 CMake 没有设置 `PICO_BOARD`，SDK 默认是 `pico`（RP2040）。在 Pico 2 上跑之前，需要另加 `-DPICO_BOARD=pico2`，并确认引脚和时钟假设仍然成立。不要先假设固件可以直接换板。
+不写 `PICO_BOARD` 时，SDK 默认是 `pico`（RP2040）。那份 UF2 的家族号是 `0xe48bff56`，RP2350 的引导程序会忽略它：文件拷进去了，板子没有任何变化。RP2350 用上面的 `build-st7306-rp2350`，家族号是 `0xe48bff59`。
+
+ST7306 这块板上的摇杆不是 I2C。X 接 GPIO26（ADC0），Y 接 GPIO27（ADC1），按键接 GPIO22，内部上拉，按下为低。中心大约在 2048，死区 300。ILI9488 仍用 GPIO6、GPIO7 上地址 `0x63` 的 I2C 摇杆。
 
 ## 9. 烧录
 
@@ -219,12 +228,15 @@ build-st7306/game2048_unified.uf2
 
 ```bash
 cp build-ili9488/game2048_unified.uf2 /Volumes/RPI-RP2/
+# RP2350 的卷名是 RP2350。macOS 的 cp 会带上扩展属性，拷贝可能失败。
+# 用重定向写进去，卷消失表示引导程序收下了这份固件。
+cat build-st7306-rp2350/game2048_unified.uf2 > /Volumes/RP2350/game2048_unified.uf2
 # 或
 picotool load -f build-ili9488/game2048_unified.uf2
 picotool reboot
 ```
 
-`picotool info` 可以在 BOOTSEL 模式下看芯片型号。macOS 上如果提示找不到设备，先确认卷已经挂载；BOOTSEL 盘能看见时，直接 `cp` 到卷上即可。
+`picotool info` 可以在 BOOTSEL 模式下看芯片型号。macOS 上如果提示找不到设备，先确认卷已经挂载。
 
 本工程打开了 USB 串口、关闭了 UART 串口（`pico_enable_stdio_usb`）。烧录后用系统自带的串口或 `picotool` 看日志，设备名一般是 `/dev/cu.usbmodem*`。
 

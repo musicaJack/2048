@@ -4,6 +4,12 @@ A 2048 game project based on Raspberry Pi Pico with support for both ST7306 refl
 
 ## Latest Updates
 
+### 2026-11-17 - ST7306 on RP2350
+
+The ST7306 build runs on RP2350. That board's joystick is analog: X on GPIO26, Y on GPIO27, and the button on GPIO22, active low. The ILI9488 and ESP32 builds still use the I2C joystick on GPIO6 and GPIO7 at address 0x63.
+
+Build the RP2350 image in its own directory with `-DPICO_BOARD=pico2`. The UF2 in `build-st7306/` is RP2040-only, and the RP2350 bootloader ignores it. See `docs/Pico开发环境配置手册.md`.
+
 ### 2026-11-12 - ESP32-S3-Pico
 
 The ILI9488 build now runs on the Waveshare ESP32-S3-Pico. The IDF project lives in `esp32/` and is separate from the Pico CMake build. The board is black, each cell has a red frame, and the digits use the classic tile colors with no tile fill. Pins, the flash port, and the layout are in `docs/ESP32-S3迁移手册.md`. ST7306 is still Pico-only.
@@ -21,9 +27,9 @@ Scoring follows classic 2048: the game starts at 0, and a merge adds the value o
 ## Hardware Requirements
 
 ### Option 1: ST7306 Reflective LCD Setup
-- **Raspberry Pi Pico (RP2040)**
-- **ST7306 Reflective LCD Display** (128×64 resolution, 4-level grayscale)
-- **I2C Joystick Controller** (Address: 0x63)
+- **Raspberry Pi Pico (RP2040) or Pico 2 (RP2350)**
+- **ST7306 Reflective LCD Display** (300×400, 4-level grayscale)
+- **Analog joystick**: X on GPIO26, Y on GPIO27, button on GPIO22
 
 ### Option 2: ILI9488 Color TFT Setup
 - **Raspberry Pi Pico (RP2040)**
@@ -55,7 +61,16 @@ Pico 3.3V  -> Display VCC
 Pico GND   -> Display GND
 ```
 
-### I2C Joystick Connections (Both Setups)
+### ST7306 Analog Joystick
+```
+Pico GPIO26 -> Joystick X (ADC0)
+Pico GPIO27 -> Joystick Y (ADC1)
+Pico GPIO22 -> Joystick button (internal pull-up, active low)
+Pico 3.3V   -> Joystick VCC
+Pico GND    -> Joystick GND
+```
+
+### I2C Joystick Connections (ILI9488 and ESP32)
 ```
 Pico GPIO6  -> Joystick SDA
 Pico GPIO7  -> Joystick SCL
@@ -111,8 +126,13 @@ clean.bat
 mkdir build
 cd build
 
-# Configure for ST7306
+# Configure for ST7306 (RP2040)
 cmake .. -DUSE_ST7306_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
+
+# Return to the repo root for RP2350. Do not reuse the cache in build/.
+cd ..
+cmake -S . -B build-st7306-rp2350 -DUSE_ST7306_DISPLAY=ON -DUSE_ILI9488_DISPLAY=OFF -DPICO_BOARD=pico2
+cmake --build build-st7306-rp2350 --target game2048_unified
 
 # Configure for ILI9488
 cmake .. -DUSE_ILI9488_DISPLAY=ON -DCMAKE_BUILD_TYPE=Release
@@ -231,9 +251,9 @@ The `game2048_unified` program is the main game application that automatically a
 ### Joystick Issues
 
 1. **No Response**
-   - Check I2C connections (GPIO6, GPIO7)
-   - Verify joystick address (0x63)
-   - Check power connections
+   - ST7306: check GPIO26, GPIO27, and GPIO22. This board does not use I2C
+   - ILI9488: check the I2C wiring (GPIO6, GPIO7) and address 0x63
+   - On RP2350, if the board is visible but the stick does nothing, confirm the UF2 was built with `-DPICO_BOARD=pico2` for ST7306
 
 2. **Incorrect Input**
    - Calibrate joystick deadzone
