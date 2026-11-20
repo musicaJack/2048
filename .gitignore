@@ -3,6 +3,7 @@ build-ili9488/
 build-st7306/
 build-ili9488-rp2350/
 build-st7306-rp2350/
+build-wifi-rp2350/
 .DS_Store
 .vscode/
 

@@ -13,6 +13,10 @@ struct InputPins {
     int screen;
     uint8_t addr;
     int hz;
+    // 屏幕键在扩展芯片上时，screen 填 -1，下面三只给出那条 I2C 和端口位。
+    int exp_sda = -1;
+    int exp_scl = -1;
+    int exp_screen_bit = -1;
 };
 
 class BoardInput {
@@ -40,12 +44,28 @@ private:
         bool long_sent = false;
     };
 
-    static void pollKey(Key& key, int debounce_ms, int long_ms, bool click_on_press,
+    static void pollKey(Key& key, bool raw, int debounce_ms, int long_ms, bool click_on_press,
                         bool& click, bool& long_press);
+
+    bool screenPressed();
+    bool expProbe(uint8_t addr);
+    bool expWrite(uint8_t reg, uint8_t data);
+    bool expRead(uint8_t reg, uint8_t& data);
+    void expStart();
+    void expStop();
+    bool expWriteByte(uint8_t value);
+    uint8_t expReadByte(bool ack);
+    void expWriteBit(int bit);
+    int expReadBit();
 
     bool joy_ready_ = false;
     uint8_t fw_ = 0;
     void* dev_ = nullptr;
+    int exp_sda_ = -1;
+    int exp_scl_ = -1;
+    int exp_bit_ = -1;
+    uint8_t exp_addr_ = 0;
+    bool exp_ready_ = false;
     Key up_;
     Key down_;
     Key screen_;

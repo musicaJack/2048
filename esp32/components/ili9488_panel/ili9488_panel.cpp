@@ -53,6 +53,10 @@ static void spi_tx(const uint8_t* dma_buf, int len, int dc_level) {
 }
 
 esp_err_t Ili9488Panel::begin(const LcdPins& pins) {
+    if (pins.sck < 0 || pins.mosi < 0 || pins.cs < 0 || pins.dc < 0 || pins.rst < 0 || pins.bl < 0) {
+        ESP_LOGE(TAG, "LCD is on the expander, SPI2 stays off");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
     dc_ = pins.dc;
     bl_ = pins.bl;
     s_dc_pin = pins.dc;

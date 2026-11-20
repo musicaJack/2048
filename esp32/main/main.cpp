@@ -295,11 +295,15 @@ extern "C" void app_main(void) {
     Ili9488Panel lcd;
     const LcdPins lcd_pins{PIN_LCD_SCK, PIN_LCD_MOSI, PIN_LCD_CS, PIN_LCD_DC,
                            PIN_LCD_RST, PIN_LCD_BL, SPI_HZ_BRINGUP};
-    ESP_ERROR_CHECK(lcd.begin(lcd_pins));
+    const esp_err_t lcd_err = lcd.begin(lcd_pins);
+    if (lcd_err != ESP_OK) {
+        ESP_LOGE(TAG, "panel idle: %s", esp_err_to_name(lcd_err));
+    }
 
     BoardInput input;
     const InputPins input_pins{PIN_JOY_SDA, PIN_JOY_SCL, PIN_PAGE_UP, PIN_PAGE_DOWN,
-                               PIN_SCREEN, JOYSTICK_ADDR, I2C_HZ};
+                               PIN_SCREEN, JOYSTICK_ADDR, I2C_HZ,
+                               PIN_EXP_SDA, PIN_EXP_SCL, PIN_EXP_SCREEN_BIT};
     ESP_ERROR_CHECK(input.begin(input_pins));
     ESP_LOGI(TAG, "joystick %s, firmware 0x%02x",
              input.joystickReady() ? "ready" : "missing", input.firmwareVersion());

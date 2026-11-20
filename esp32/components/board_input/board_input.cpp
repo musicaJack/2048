@@ -5,6 +5,7 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 #include "esp_log.h"
+#include "esp_rom_sys.h"
 #include "esp_timer.h"
 
 static const char* TAG = "input";
@@ -14,19 +15,62 @@ static constexpr uint8_t REG_OFFSET_12 = 0x50;
 static constexpr uint8_t REG_FW = 0xFE;
 
 esp_err_t BoardInput::begin(const InputPins& pins) {
-    gpio_config_t in = {};
-    in.pin_bit_mask = (1ULL << pins.page_up) | (1ULL << pins.page_down) | (1ULL << pins.screen);
-    in.mode = GPIO_MODE_INPUT;
-    in.pull_up_en = GPIO_PULLUP_ENABLE;
-    in.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    in.intr_type = GPIO_INTR_DISABLE;
-    ESP_ERROR_CHECK(gpio_config(&in));
+    uint64_t mask = 0;
+    if (pins.page_up >= 0) {
+        mask |= 1ULL << pins.page_up;
+    }
+    if (pins.page_down >= 0) {
+        mask |= 1ULL << pins.page_down;
+    }
+    if (pins.screen >= 0) {
+        mask |= 1ULL << pins.screen;
+    }
+    if (mask != 0) {
+        gpio_config_t in = {};
+        in.pin_bit_mask = mask;
+        in.mode = GPIO_MODE_INPUT;
+        in.pull_up_en = GPIO_PULLUP_ENABLE;
+        in.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        in.intr_type = GPIO_INTR_DISABLE;
+        ESP_ERROR_CHECK(gpio_config(&in));
+    }
+
+    if (pins.exp_sda >= 0 && pins.exp_scl >= 0 && pins.exp_screen_bit >= 0) {
+        exp_sda_ = pins.exp_sda;
+        exp_scl_ = pins.exp_scl;
+        exp_bit_ = pins.exp_screen_bit;
+        gpio_config_t od = {};
+        od.pin_bit_mask = (1ULL << pins.exp_sda) | (1ULL << pins.exp_scl);
+        od.mode = GPIO_MODE_OUTPUT_OD;
+        od.pull_up_en = GPIO_PULLUP_ENABLE;
+        od.pull_down_en = GPIO_PULLDOWN_DISABLE;
+        od.intr_type = GPIO_INTR_DISABLE;
+        ESP_ERROR_CHECK(gpio_config(&od));
+        gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 1);
+        gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 1);
+        for (uint8_t addr = 0x20; addr <= 0x27; ++addr) {
+            if (expProbe(addr)) {
+                exp_addr_ = addr;
+                exp_ready_ = expWrite(0x03, 0xFF);
+                ESP_LOGI(TAG, "expander 0x%02x %s", addr, exp_ready_ ? "ready" : "config failed");
+                break;
+            }
+        }
+        if (!exp_ready_) {
+            ESP_LOGW(TAG, "TCA9554 0x20-0x27 no ack");
+        }
+    }
 
     up_.pin = pins.page_up;
     down_.pin = pins.page_down;
     screen_.pin = pins.screen;
     const int64_t now = esp_timer_get_time();
     up_.changed_us = down_.changed_us = screen_.changed_us = now;
+    if (exp_ready_) {
+        // EXIO 没有上拉。上电时若读到低，先当作已经按住，等松开后再认一次新的长按。
+        screen_.raw = true;
+        screen_.stable = true;
+    }
 
     i2c_master_bus_config_t bus_cfg = {};
     bus_cfg.i2c_port = I2C_NUM_0;
@@ -97,11 +141,10 @@ bool BoardInput::stickPressed() {
     return value == 0;
 }
 
-void BoardInput::pollKey(Key& key, int debounce_ms, int long_ms, bool click_on_press,
+void BoardInput::pollKey(Key& key, bool raw, int debounce_ms, int long_ms, bool click_on_press,
                          bool& click, bool& long_press) {
     click = false;
     long_press = false;
-    const bool raw = gpio_get_level(static_cast<gpio_num_t>(key.pin)) == 0;
     const int64_t now = esp_timer_get_time();
     if (raw != key.raw) {
         key.raw = raw;
@@ -135,10 +178,114 @@ void BoardInput::pollKey(Key& key, int debounce_ms, int long_ms, bool click_on_p
     }
 }
 
+bool BoardInput::screenPressed() {
+    if (exp_ready_) {
+        uint8_t value = 0xFF;
+        if (!expRead(0x00, value)) {
+            return false;
+        }
+        return (value & (1U << exp_bit_)) == 0;
+    }
+    if (screen_.pin < 0) {
+        return false;
+    }
+    return gpio_get_level(static_cast<gpio_num_t>(screen_.pin)) == 0;
+}
+
 void BoardInput::poll(int debounce_ms, int long_ms, bool& up_click, bool& down_click, bool& screen_long) {
     bool ignored = false;
-    pollKey(up_, debounce_ms, long_ms, true, up_click, ignored);
-    pollKey(down_, debounce_ms, long_ms, true, down_click, ignored);
+    const bool up_raw = up_.pin >= 0 && gpio_get_level(static_cast<gpio_num_t>(up_.pin)) == 0;
+    const bool down_raw = down_.pin >= 0 && gpio_get_level(static_cast<gpio_num_t>(down_.pin)) == 0;
+    pollKey(up_, up_raw, debounce_ms, long_ms, true, up_click, ignored);
+    pollKey(down_, down_raw, debounce_ms, long_ms, true, down_click, ignored);
     bool screen_click = false;
-    pollKey(screen_, debounce_ms, long_ms, false, screen_click, screen_long);
+    pollKey(screen_, screenPressed(), debounce_ms, long_ms, false, screen_click, screen_long);
+}
+
+void BoardInput::expStart() {
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 1);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 0);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 0);
+    esp_rom_delay_us(5);
+}
+
+void BoardInput::expStop() {
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 0);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 1);
+    esp_rom_delay_us(5);
+}
+
+void BoardInput::expWriteBit(int bit) {
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), bit ? 1 : 0);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 0);
+    esp_rom_delay_us(5);
+}
+
+int BoardInput::expReadBit() {
+    gpio_set_level(static_cast<gpio_num_t>(exp_sda_), 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 1);
+    esp_rom_delay_us(5);
+    const int level = gpio_get_level(static_cast<gpio_num_t>(exp_sda_));
+    gpio_set_level(static_cast<gpio_num_t>(exp_scl_), 0);
+    esp_rom_delay_us(5);
+    return level;
+}
+
+bool BoardInput::expWriteByte(uint8_t value) {
+    for (int bit = 7; bit >= 0; --bit) {
+        expWriteBit((value >> bit) & 1);
+    }
+    return expReadBit() == 0;
+}
+
+uint8_t BoardInput::expReadByte(bool ack) {
+    uint8_t value = 0;
+    for (int bit = 7; bit >= 0; --bit) {
+        if (expReadBit()) {
+            value |= static_cast<uint8_t>(1U << bit);
+        }
+    }
+    expWriteBit(ack ? 0 : 1);
+    return value;
+}
+
+bool BoardInput::expProbe(uint8_t addr) {
+    expStart();
+    const bool ack = expWriteByte(static_cast<uint8_t>(addr << 1));
+    expStop();
+    return ack;
+}
+
+bool BoardInput::expWrite(uint8_t reg, uint8_t data) {
+    expStart();
+    const bool ok = expWriteByte(static_cast<uint8_t>(exp_addr_ << 1)) && expWriteByte(reg) &&
+                    expWriteByte(data);
+    expStop();
+    return ok;
+}
+
+bool BoardInput::expRead(uint8_t reg, uint8_t& data) {
+    expStart();
+    if (!expWriteByte(static_cast<uint8_t>(exp_addr_ << 1)) || !expWriteByte(reg)) {
+        expStop();
+        return false;
+    }
+    expStart();
+    if (!expWriteByte(static_cast<uint8_t>((exp_addr_ << 1) | 1))) {
+        expStop();
+        return false;
+    }
+    data = expReadByte(false);
+    expStop();
+    return true;
 }
